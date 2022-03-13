@@ -1,7 +1,6 @@
 import pandas as pd
 import utils as ut
-from detectron2.evaluation import COCOEvaluator, inference_on_dataset
-from detectron2.data import build_detection_test_loader
+import voc_evaluation
 
 # PATHS
 annotations_path = 'data/ai_challenge_s03_c010-full_annotation.xml'
@@ -16,6 +15,4 @@ if __name__ == '__main__':
 	annotations = ut.read_annotations(annotations_path)
 	detections = ut.read_detections(detections_path['rcnn'])
 
-	evaluator = COCOEvaluator("balloon_val", output_dir="./output")
-	val_loader = build_detection_test_loader(cfg, "balloon_val")
-	print(inference_on_dataset(predictor.model, val_loader, evaluator))
+	print(voc_evaluation.voc_eval(annotations, detections))

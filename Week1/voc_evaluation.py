@@ -5,91 +5,53 @@ def voc_ap(rec, prec, use_07_metric=False):
     """Compute VOC AP given precision and recall. If use_07_metric is true, uses
     the VOC 07 11-point method (default:False).
     """
-    if use_07_metric:
-        # 11 point metric
-        ap = 0.0
-        for t in np.arange(0.0, 1.1, 0.1):
-            if np.sum(rec >= t) == 0:
-                p = 0
-            else:
-                p = np.max(prec[rec >= t])
-            ap = ap + p / 11.0
-    else:
-        # correct AP calculation
-        # first append sentinel values at the end
-        mrec = np.concatenate(([0.0], rec, [1.0]))
-        mpre = np.concatenate(([0.0], prec, [0.0]))
+    # correct AP calculation
+    # first append sentinel values at the end
+    mrec = np.concatenate(([0.0], rec, [1.0]))
+    mpre = np.concatenate(([0.0], prec, [0.0]))
 
-        # compute the precision envelope
-        for i in range(mpre.size - 1, 0, -1):
-            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+    # compute the precision envelope
+    for i in range(mpre.size - 1, 0, -1):
+        mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
 
-        # to calculate area under PR curve, look for points
-        # where X axis (recall) changes value
-        i = np.where(mrec[1:] != mrec[:-1])[0]
+    # to calculate area under PR curve, look for points
+    # where X axis (recall) changes value
+    i = np.where(mrec[1:] != mrec[:-1])[0]
 
-        # and sum (\Delta recall) * prec
-        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+    # and sum (\Delta recall) * prec
+    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
 
-def voc_eval(detpath, annopath, imagesetfile, classname, ovthresh=0.5, use_07_metric=False):
-    """rec, prec, ap = voc_eval(detpath,
-                                annopath,
-                                imagesetfile,
-                                classname,
-                                [ovthresh],
-                                [use_07_metric])
-    Top level function that does the PASCAL VOC evaluation.
-    detpath: Path to detections
-        detpath.format(classname) should produce the detection results file.
-    annopath: Path to annotations
-        annopath.format(imagename) should be the xml annotations file.
-    imagesetfile: Text file containing the list of images, one image per line.
-    classname: Category name (duh)
-    [ovthresh]: Overlap threshold (default = 0.5)
-    [use_07_metric]: Whether to use VOC07's 11 point AP computation
-        (default False)
-    """
-    # assumes detections are in detpath.format(classname)
-    # assumes annotations are in annopath.format(imagename)
-    # assumes imagesetfile is a text file with each line an image name
+def voc_eval(gt_bboxs, det_bboxs, ovthresh=0.5):
 
-    # first load gt
-    # read list of images
-    with PathManager.open(imagesetfile, "r") as f:
-        lines = f.readlines()
-    imagenames = [x.strip() for x in lines]
-
-    # load annots
-    recs = {}
-    for imagename in imagenames:
-        recs[imagename] = parse_rec(annopath.format(imagename))
-
-    # extract gt objects for this class
     class_recs = {}
     npos = 0
-    for imagename in imagenames:
-        R = [obj for obj in recs[imagename] if obj["name"] == classname]
-        bbox = np.array([x["bbox"] for x in R])
-        difficult = np.array([x["difficult"] for x in R]).astype(np.bool)
-        # difficult = np.array([False for x in R]).astype(np.bool)  # treat all "difficult" as GT
-        det = [False] * len(R)
-        npos = npos + sum(~difficult)
-        class_recs[imagename] = {"bbox": bbox, "difficult": difficult, "det": det}
+    for frame, bboxs in gt_bboxs.items():
+        class_recs[frame] = {
+            'bbox': np.array(bboxs),
+            'difficult': np.array([False] * len(bboxs)).astype(np.bool),
+            'det': [False] * len(bboxs)
+        }
+        npos += len(bboxs)
 
-    # read dets
-    detfile = detpath.format(classname)
-    with open(detfile, "r") as f:
-        lines = f.readlines()
+    # sort by confidence
+    image_ids = []
+    confidence = []
+    BB = []
 
-    splitlines = [x.strip().split(" ") for x in lines]
-    image_ids = [x[0] for x in splitlines]
-    confidence = np.array([float(x[1]) for x in splitlines])
-    BB = np.array([[float(z) for z in x[2:]] for x in splitlines]).reshape(-1, 4)
+    for frame, objs in det_bboxs.items():
+        for obj in objs:
+            image_ids.append(frame)
+            confidence.append(obj['conf'])  # unkwnown
+            BB.append(obj['bbox'])
+
+    confidence = np.array(confidence)
+    BB = np.array(BB)
 
     # sort by confidence
     sorted_ind = np.argsort(-confidence)
+    sorted_scores = np.sort(-confidence)
     BB = BB[sorted_ind, :]
     image_ids = [image_ids[x] for x in sorted_ind]
 
@@ -142,6 +104,6 @@ def voc_eval(detpath, annopath, imagesetfile, classname, ovthresh=0.5, use_07_me
     # avoid divide by zero in case the first detection matches a difficult
     # ground truth
     prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-    ap = voc_ap(rec, prec, use_07_metric)
+    ap = voc_ap(rec, prec)
 
     return rec, prec, ap

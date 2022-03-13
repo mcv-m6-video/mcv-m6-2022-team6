@@ -1,4 +1,5 @@
 import xmltodict
+import numpy as np
 
 def read_annotations(path):
 	with open(path) as f:
@@ -17,12 +18,12 @@ def read_annotations(path):
 			if frame not in annotations:
 				annotations[frame] = []
 
-			annotations[frame].append([
+			annotations[frame].append(np.array([
 				float(box['@xtl']),
 				float(box['@ytl']),
 				float(box['@xbr']),
 				float(box['@ybr']),
-			])
+			]))
 	return annotations
 
 def read_detections(path, confidenceThr=0.5):
@@ -41,12 +42,13 @@ def read_detections(path, confidenceThr=0.5):
 			if frame not in detections:
 				detections[frame] = []
 
-			detections[frame].append([
-				float(det[2]),
+			detections[frame].append({
+				"bbox": np.array([float(det[2]),
 				float(det[3]),
 				float(det[2]) + float(det[4]),
-				float(det[3]) + float(det[5]),
-				float(det[6])
-			])
+				float(det[3]) + float(det[5])]),
+				"conf": float(det[6]),
+				"difficult": False
+			})
 
 	return detections
