@@ -1,2 +1,4 @@
-/AICity_data/
-/results_optical/
+AICity_data/
+images
+ffmpeg
+.idea
