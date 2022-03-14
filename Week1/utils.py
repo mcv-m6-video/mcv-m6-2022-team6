@@ -1,5 +1,12 @@
 import xmltodict
 import numpy as np
+from torchvision.io import read_video
+import cv2
+
+def read_frame(video, frame=0):
+	frame = read_video(video, frame, frame)[0]
+	img = frame.reshape(frame.shape[1:]).numpy();
+	return cv2.cvtColor(img, cv2.COLOR_BGR2RGB);
 
 def read_annotations(path):
 	with open(path) as f:
@@ -8,7 +15,7 @@ def read_annotations(path):
 		nframes = int(data['annotations']['meta']['task']['size'])
 
 	annotations = {}
-	for i in range(nframes + 1):
+	for i in range(nframes):
 		annotations[i] = [];
 
 	for track in tracks:
@@ -42,9 +49,9 @@ def read_detections(path, confidenceThr=0.5):
 
 			frame = int(det[0])
 			if frame not in detections:
-				detections[frame] = []
+				detections[frame - 1] = []
 
-			detections[frame].append({
+			detections[frame - 1].append({
 				"bbox": np.array([float(det[2]),
 				float(det[3]),
 				float(det[2]) + float(det[4]),
@@ -54,3 +61,42 @@ def read_detections(path, confidenceThr=0.5):
 			})
 
 	return detections
+
+
+def get_rect_iou(a, b):
+	"""Return iou for a single a pair of boxes"""
+	x11, y11, x12, y12 = a
+	x21, y21, x22, y22 = b
+
+	xA = max(x11, x21)
+	yA = max(y11, y21)
+	xB = min(x12, x22)
+	yB = min(y12, y22)
+
+	# respective area of ​​the two boxes
+	boxAArea = (x12 - x11) * (y12 - y11)
+	boxBArea = (x22 - x21) * (y22 - y21)
+
+	# overlap area
+	interArea = max(xB - xA, 0) * max(yB - yA, 0)
+
+	# IOU
+	return interArea / (boxAArea + boxBArea - interArea)
+
+
+def get_frame_iou(gt_rects, det_rects):
+	"""Return iou for a frame"""
+	list_iou = []
+
+	for gt in gt_rects:
+		max_iou = 0
+		for obj in det_rects:
+			det = obj['bbox']
+			iou = get_rect_iou(det, gt)
+			if iou > max_iou:
+				max_iou = iou
+
+		if max_iou != 0:
+			list_iou.append(max_iou)
+
+	return np.mean(list_iou)

@@ -22,6 +22,8 @@ def voc_ap(rec, prec, use_07_metric=False):
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
+def voc_eval_frame(gt_bboxs, det_bboxs, ovthresh=0.5):
+    pass
 
 def voc_eval(gt_bboxs, det_bboxs, ovthresh=0.5):
 

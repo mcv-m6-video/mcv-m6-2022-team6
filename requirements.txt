@@ -77,6 +77,7 @@ numexpr @ file:///opt/concourse/worker/volumes/live/87ac54fe-281a-440d-4d94-26ac
 numpy @ file:///opt/concourse/worker/volumes/live/21fb9bb9-9731-4901-4403-2bc27cc2cc33/volume/numpy_and_numpy_base_1634106739792/work
 oauthlib @ file:///opt/conda/conda-bld/oauthlib_1644332107998/work
 omegaconf==2.1.1
+opencv-python==4.5.5.64
 packaging @ file:///tmp/build/80754af9/packaging_1637314298585/work
 pandas==1.4.1
 pandocfilters==1.5.0
