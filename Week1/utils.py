@@ -3,9 +3,14 @@ import numpy as np
 
 def read_annotations(path):
 	with open(path) as f:
-		tracks = xmltodict.parse(f.read())['annotations']['track']
+		data = xmltodict.parse(f.read())
+		tracks = data['annotations']['track']
+		nframes = int(data['annotations']['meta']['task']['size'])
 
 	annotations = {}
+	for i in range(nframes + 1):
+		annotations[i] = [];
+
 	for track in tracks:
 		id = track['@id']
 		label = track['@label']
