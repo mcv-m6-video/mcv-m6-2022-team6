@@ -1,7 +1,5 @@
-import pandas as pd
 import utils as ut
 import voc_evaluation
-import cv2
 
 # PATHS
 annotations_path = 'data/ai_challenge_s03_c010-full_annotation.xml'
@@ -26,18 +24,7 @@ if __name__ == '__main__':
 		detections = ut.read_detections(detections_path['ssd']) #Real
 
 	if display:
-		frame = ut.read_frame(video_path, frame_id)
-		for r in annotations[frame_id]:
-			frame = cv2.rectangle(frame, (int(r[0]), int(r[1])), (int(r[2]), int(r[3])), (0, 255, 0), 2)
-
-		for r in detections[frame_id]:
-			bbox = r['bbox']
-			frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 0, 255), 2)
-
-		imS = cv2.resize(frame, (960, 540))
-		cv2.imshow('Frame', imS)
-		cv2.waitKey(0)  # waits until a key is pressed
-		cv2.destroyAllWindows()
+		ut.display_frame(ut.read_frame(video_path, frame_id), annotations[frame_id], detections[frame_id])
 
 	#One frame
 	iou_frame = ut.get_frame_iou(annotations[frame_id], detections[frame_id]);

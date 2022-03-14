@@ -115,3 +115,17 @@ def get_frame_iou(gt_rects, det_rects):
 			list_iou.append(max_iou)
 
 	return np.mean(list_iou)
+
+def display_frame(frame, annotations, detections):
+
+	for r in annotations:
+		frame = cv2.rectangle(frame, (int(r[0]), int(r[1])), (int(r[2]), int(r[3])), (0, 255, 0), 2)
+
+	for r in detections:
+		bbox = r['bbox']
+		frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 0, 255), 2)
+
+	imS = cv2.resize(frame, (960, 540))
+	cv2.imshow('Frame', imS)
+	cv2.waitKey(0)  # waits until a key is pressed
+	cv2.destroyAllWindows()
