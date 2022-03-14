@@ -3,6 +3,21 @@ import numpy as np
 from torchvision.io import read_video
 import cv2
 
+def annotations_to_detections(annotations, noisy=False):
+
+	detections = {}
+	for frame, value in annotations.items():
+		detections[frame] = []
+		for bbox in value:
+			detections[frame].append({
+				"bbox": bbox,
+				"conf": 1,
+				"difficult": False
+			})
+
+	return detections
+
+
 def read_frame(video, frame=0):
 	frame = read_video(video, frame, frame)[0]
 	img = frame.reshape(frame.shape[1:]).numpy();
