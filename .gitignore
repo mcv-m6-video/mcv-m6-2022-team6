@@ -2,3 +2,4 @@ data/AICity_data/
 data/images
 ffmpeg
 .idea
+__pycache__

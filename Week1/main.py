@@ -13,7 +13,7 @@ detections_path = {
 if __name__ == '__main__':
 
 	frame_id = 1500
-	display = True
+	display = False
 	test_det = False
 
 	annotations = ut.read_annotations(annotations_path)
