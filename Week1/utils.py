@@ -63,7 +63,7 @@ def read_detections(path, confidenceThr=0.5):
 		if float(det[6]) > confidenceThr:
 
 			frame = int(det[0])
-			if frame not in detections:
+			if frame - 1 not in detections:
 				detections[frame - 1] = []
 
 			detections[frame - 1].append({

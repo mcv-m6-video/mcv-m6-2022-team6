@@ -14,14 +14,14 @@ if __name__ == '__main__':
 
 	frame_id = 1500
 	display = True
-	test_det = True
+	test_det = False
 
 	annotations = ut.read_annotations(annotations_path)
 
 	if test_det:
 		detections = ut.annotations_to_detections(annotations) #Test
 	else:
-		detections = ut.read_detections(detections_path['ssd']) #Real
+		detections = ut.read_detections(detections_path['rcnn']) #Real
 
 	if display:
 		ut.display_frame(ut.read_frame(video_path, frame_id), annotations[frame_id], detections[frame_id])
