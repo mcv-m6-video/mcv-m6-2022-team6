@@ -15,16 +15,19 @@ if __name__ == '__main__':
 	frame_id = 1500
 	display = True
 	test_det = True
+	generate_noise = True
+	noisy_percent = 0.3
 
 	annotations = ut.read_annotations(annotations_path)
 
 	if test_det:
-		detections = ut.annotations_to_detections(annotations) #Test
+		detections = ut.annotations_to_detections(annotations, generate_noise, noisy_percent) #Test
 	else:
 		detections = ut.read_detections(detections_path['rcnn']) #Real
 
 	if display:
-		ut.display_frame(ut.read_frame(video_path, frame_id), annotations[frame_id], detections[frame_id])
+		frame = ut.print_bboxes(ut.read_frame(video_path, frame_id), annotations[frame_id], detections[frame_id])
+		ut.display_frame(frame)
 
 	#One frame
 	iou_frame = ut.get_frame_iou(annotations[frame_id], detections[frame_id]);

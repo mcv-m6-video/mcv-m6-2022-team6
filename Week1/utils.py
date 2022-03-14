@@ -2,15 +2,27 @@ import xmltodict
 import numpy as np
 from torchvision.io import read_video
 import cv2
+import random
 
-def annotations_to_detections(annotations, noisy=False):
+def annotations_to_detections(annotations, noisy=False, noisy_p=0.4):
 
 	detections = {}
 	for frame, value in annotations.items():
 		detections[frame] = []
 		for bbox in value:
+			r_noise = random.randint(0, 100) / 100
+			bboxcpy = np.copy(bbox)
+			print(r_noise)
+			if noisy and r_noise <= noisy_p:
+				rx = random.randint(500, 2000) / 100
+				ry = random.randint(500, 2000) / 100
+				bboxcpy[0] = bbox[0] + rx;
+				bboxcpy[1] = bbox[1] + ry;
+				bboxcpy[2] = bbox[2] + rx;
+				bboxcpy[3] = bbox[3] + ry;
+
 			detections[frame].append({
-				"bbox": bbox,
+				"bbox": bboxcpy,
 				"conf": 1,
 				"difficult": False
 			})
@@ -116,7 +128,7 @@ def get_frame_iou(gt_rects, det_rects):
 
 	return np.mean(list_iou)
 
-def display_frame(frame, annotations, detections):
+def print_bboxes(frame, annotations, detections):
 
 	for r in annotations:
 		frame = cv2.rectangle(frame, (int(r[0]), int(r[1])), (int(r[2]), int(r[3])), (0, 255, 0), 2)
@@ -125,6 +137,10 @@ def display_frame(frame, annotations, detections):
 		bbox = r['bbox']
 		frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 0, 255), 2)
 
+	return frame;
+
+
+def display_frame(frame):
 	imS = cv2.resize(frame, (960, 540))
 	cv2.imshow('Frame', imS)
 	cv2.waitKey(0)  # waits until a key is pressed
