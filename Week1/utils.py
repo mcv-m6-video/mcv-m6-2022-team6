@@ -4,13 +4,17 @@ from torchvision.io import read_video
 import cv2
 import random
 
-def annotations_to_detections(annotations, noisy=False, noisy_p=0.4):
+def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=False, dropout_p=0.5):
 
 	detections = {}
 	for frame, value in annotations.items():
 		detections[frame] = []
 		for bbox in value:
 			r_noise = random.randint(0, 100) / 100
+			r_dropout = random.randint(0, 100) / 100
+			if dropout and r_dropout <= dropout_p:
+				continue
+
 			bboxcpy = np.copy(bbox)
 			print(r_noise)
 			if noisy and r_noise <= noisy_p:
