@@ -20,9 +20,6 @@ def read_annotations(path):
 
 		for box in track['box']:
 			frame = int(box['@frame'])
-			if frame not in annotations:
-				annotations[frame] = []
-
 			annotations[frame].append(np.array([
 				float(box['@xtl']),
 				float(box['@ytl']),
