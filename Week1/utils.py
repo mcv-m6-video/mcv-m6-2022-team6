@@ -3,6 +3,7 @@ import numpy as np
 from torchvision.io import read_video
 import cv2
 import random
+from matplotlib import pyplot as plt
 
 def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=False, dropout_p=0.5):
 
@@ -154,3 +155,66 @@ def display_frame(frame):
 	cv2.imshow('Frame', imS)
 	cv2.waitKey(0)  # waits until a key is pressed
 	cv2.destroyAllWindows()
+
+def lucasKanade(imgA, imgB):
+	#u = (A^t A)^-1 A^T B
+	flow = np.invert(np.transpose(imgA) * imgA)*np.transpose(imgA)*imgB
+	flow = imgA-imgB
+	return flow
+
+def flow_read(flow_dir):
+    # cv2 imread ---> BGR  need to converted in RGB format
+
+    im = cv2.imread(flow_dir, cv2.IMREAD_UNCHANGED)
+    im_kitti = np.flip(im, axis=2).astype(np.double)
+    # As Lucas-Kanade follows the formula [u v]^T= (A^t A)^-1 A^T B 
+	# We normalize x and y component that are divided in 2 differnt layers
+    u_f = (im_kitti[:, :, 0] - 2. ** 15) / 64
+    v_f = (im_kitti[:, :, 1] - 2. ** 15) / 64
+
+    # All the points with module smaller than 1 wil be considered as static
+    f_valid = im_kitti[:, :, 2]
+    f_valid[f_valid > 1] = 1
+
+    u_f[f_valid == 0] = 0
+    v_f[f_valid == 0] = 0
+
+    #flow = np.dstack([u_f, v_f])
+
+    flow_1 = np.dstack([u_f, v_f, f_valid])
+
+    return flow_1
+
+def msen(F_gt, F_test):
+    SEN = []
+
+    E_du = (F_gt[:, :, 0] - F_test[:, :, 0])
+
+    E_dv = (F_gt[:, :, 1] - F_test[:, :, 1])
+
+    E = np.sqrt(E_du ** 2 + E_dv ** 2)
+
+    F_valid_gt = F_gt[:, :, 2]
+
+    E[F_valid_gt == 0] = 0  # 0s in ocluded pixels
+
+    SEN = np.append(SEN, E[F_valid_gt != 0])  # take in account the error of the non-ocluded pixels
+
+    MSEN = np.mean(SEN)
+
+    plt.figure(1)
+    plt.hist(E[F_valid_gt == 1], bins=40, density=True)
+    plt.title('Optical Flow error')
+    plt.xlabel('MSEN')
+    plt.ylabel('Number of pixels')
+    plt.savefig('histogram.png')
+    plt.show()
+
+    plt.figure(2)
+    plt.imshow(np.reshape(E, F_gt.shape[:-1]))
+    plt.colorbar()
+    plt.tick_params(axis='both', labelbottom=False, labelleft=False)
+    plt.savefig('error_image.png')
+    plt.show()
+
+    return MSEN
