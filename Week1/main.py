@@ -1,6 +1,8 @@
 import utils as ut
 import voc_evaluation
+import os
 
+os.chdir("C:/Users/eudal/Documents/M6/mcv-m6-2022-team6-main/")
 # PATHS
 annotations_path = 'data/ai_challenge_s03_c010-full_annotation.xml'
 video_path = 'data/AICity_data/train/S03/c010/vdo.avi'

@@ -39,6 +39,11 @@ def read_frame(video, frame=0):
 	img = frame.reshape(frame.shape[1:]).numpy();
 	return cv2.cvtColor(img, cv2.COLOR_BGR2RGB);
 
+def read_frame_bw(video, frame =0):
+	frame = read_video(video, frame, frame)[0]
+	img = frame.reshape(frame.shape[1:]).numpy();
+	return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
+
 def read_annotations(path):
 	with open(path) as f:
 		data = xmltodict.parse(f.read())
