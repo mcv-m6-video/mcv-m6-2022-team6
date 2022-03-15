@@ -90,6 +90,20 @@ def read_detections(path, confidenceThr=0.5):
 				"conf": float(det[6]),
 				"difficult": False
 			})
+		#append dummy box in order to match len(anotations) and len(predictions) 
+		else:
+			frame = int(det[0])
+			if frame - 1 not in detections:
+				detections[frame - 1] = []
+
+			detections[frame - 1].append({
+				"bbox": np.array([0,
+				0,
+				0 + 0,
+				0 + 0]),
+				"conf": float(det[6]),
+				"difficult": False
+			})
 
 	return detections
 
