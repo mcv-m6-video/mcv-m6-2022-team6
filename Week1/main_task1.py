@@ -13,17 +13,19 @@ detections_path = {
 if __name__ == '__main__':
 
 	frame_id = 1500
-	display = True
-	test_det = True
-	generate_noise = True
-	noisy_percent = 0.3
+	display = False
+	test_det = False
+	generate_noise = False
+	noisy_percent = 1
+	dropout = False
+	dropout_percent = 0.90
 
 	annotations = ut.read_annotations(annotations_path)
 
 	if test_det:
-		detections = ut.annotations_to_detections(annotations, generate_noise, noisy_percent) #Test
+		detections = ut.annotations_to_detections(annotations, generate_noise, noisy_percent, dropout, dropout_percent) #Test
 	else:
-		detections = ut.read_detections(detections_path['rcnn']) #Real
+		detections = ut.read_detections(detections_path['yolo']) #Real
 
 	if display:
 		frame = ut.print_bboxes(ut.read_frame(video_path, frame_id), annotations[frame_id], detections[frame_id])
