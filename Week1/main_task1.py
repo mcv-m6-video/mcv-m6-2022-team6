@@ -10,6 +10,20 @@ detections_path = {
 	'yolo': 'data/AICity_data/train/S03/c010/det/det_yolo3.txt'
 }
 
+def task103():
+	F_gt = ut.flow_read("data/results_opticalflow_kitti/groundtruth/000045_10.png")
+	F_test = ut.flow_read("data/results_opticalflow_kitti/results/LKflow_000045_10.png")
+
+	MSEN = ut.msen(F_gt, F_test)
+	PEPN = ut.pepn(F_gt, F_test, 0.5)
+	
+	print(MSEN)
+	print(PEPN)
+
+def task104():
+	F_gt = ut.flow_read("data/results_opticalflow_kitti/groundtruth/000045_10.png")
+	ut.plotFlow(F_gt)
+
 if __name__ == '__main__':
 
 	frame_id = 1500
