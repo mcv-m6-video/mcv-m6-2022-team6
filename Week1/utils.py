@@ -144,8 +144,11 @@ def get_frame_iou(gt_rects, det_rects):
 
 		if max_iou != 0:
 			list_iou.append(max_iou)
-
-	return np.mean(list_iou)
+	mean = np.mean(list_iou)
+	if np.isnan(mean):
+		return 0
+	else:
+		return mean
 
 def print_bboxes(frame, annotations, detections):
 
