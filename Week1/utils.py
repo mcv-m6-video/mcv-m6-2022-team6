@@ -165,45 +165,50 @@ def lucasKanade(imgA, imgB):
 def flow_read(flow_dir):
     # cv2 imread ---> BGR  need to converted in RGB format
 
-    im = cv2.imread(flow_dir, cv2.IMREAD_UNCHANGED)
-    im_kitti = np.flip(im, axis=2).astype(np.double)
+    im_flow = cv2.imread(flow_dir, cv2.IMREAD_UNCHANGED)
     # As Lucas-Kanade follows the formula [u v]^T= (A^t A)^-1 A^T B 
 	# We normalize x and y component that are divided in 2 differnt layers
-    u_f = (im_kitti[:, :, 0] - 2. ** 15) / 64
-    v_f = (im_kitti[:, :, 1] - 2. ** 15) / 64
+    u_flow = (im_flow[:, :, 2] - 2. ** 15) / 64
+    v_flow = (im_flow[:, :, 1] - 2. ** 15) / 64
 
     # All the points with module smaller than 1 wil be considered as static
-    f_valid = im_kitti[:, :, 2]
-    f_valid[f_valid > 1] = 1
+    flow_valid = im_flow[:, :, 0]
+    flow_valid[flow_valid > 1] = 1
 
-    u_f[f_valid == 0] = 0
-    v_f[f_valid == 0] = 0
+    u_flow[flow_valid == 0] = 0
+    v_flow[flow_valid == 0] = 0
 
     #flow = np.dstack([u_f, v_f])
 
-    flow_1 = np.dstack([u_f, v_f, f_valid])
+    flow_map = np.dstack([u_flow, v_flow, flow_valid])
 
-    return flow_1
+    plt.figure(1)
+    plt.imshow(flow_map)
+    plt.colorbar()
+    plt.tick_params(axis='both', labelbottom=False, labelleft=False)
+    plt.savefig('inputImage.png')
+    plt.show()
+    return flow_map
 
-def msen(F_gt, F_test):
+def msen(Frame_gt, Frame_test):
+    '''
+	Frame_gt : frame grountruth
+	Frame_test: frame test
+    '''
     SEN = []
 
-    E_du = (F_gt[:, :, 0] - F_test[:, :, 0])
+    Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
 
-    E_dv = (F_gt[:, :, 1] - F_test[:, :, 1])
+    F_valid_gt = Frame_gt[:, :, 2]
 
-    E = np.sqrt(E_du ** 2 + E_dv ** 2)
+    Module[F_valid_gt == 0] = 0  # 0s in ocluded pixels
 
-    F_valid_gt = F_gt[:, :, 2]
-
-    E[F_valid_gt == 0] = 0  # 0s in ocluded pixels
-
-    SEN = np.append(SEN, E[F_valid_gt != 0])  # take in account the error of the non-ocluded pixels
+    SEN = np.append(SEN, Module[F_valid_gt != 0])  # take in account the error of the non-ocluded pixels
 
     MSEN = np.mean(SEN)
 
     plt.figure(1)
-    plt.hist(E[F_valid_gt == 1], bins=40, density=True)
+    plt.hist(Module[F_valid_gt == 1], bins=40, density=True)
     plt.title('Optical Flow error')
     plt.xlabel('MSEN')
     plt.ylabel('Number of pixels')
@@ -211,10 +216,46 @@ def msen(F_gt, F_test):
     plt.show()
 
     plt.figure(2)
-    plt.imshow(np.reshape(E, F_gt.shape[:-1]))
+    plt.imshow(np.reshape(Module, Frame_gt.shape[:-1]))
     plt.colorbar()
     plt.tick_params(axis='both', labelbottom=False, labelleft=False)
     plt.savefig('error_image.png')
     plt.show()
 
     return MSEN
+
+def pepn(Frame_gt, Frame_test, th):
+    MSEN = []
+
+    Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
+
+    F_valid_gt = Frame_gt[:, :, 2]
+
+    Module[F_valid_gt == 0] = 0  # 0s in ocluded pixels
+
+    MSEN = np.append(MSEN, Module[F_valid_gt != 0])  # take in account the error of the non-ocluded pixels
+
+    PEPN = (np.sum(MSEN > th) / len(MSEN)) * 100
+
+    return PEPN
+
+
+def plotFlow(flow):
+	sampling = 10
+
+	fig1, ax1 = plt.subplots()
+	U = flow[:,:,0]
+	V = flow[:,:,1]
+	valid = flow[:,:,2]
+	U = U * valid
+	V = V * valid
+	X , Y = np.meshgrid(np.arange(0, np.shape(flow)[1]),np.arange(0,np.shape(flow)[0]))
+	ax1.set_title("pivot='tip'; scales with x view")
+	max_vector_length = max(np.max(U),np.max(V))
+	Q = ax1.quiver(X[::sampling,::sampling], Y[::sampling,::sampling], U[::sampling,::sampling], V[::sampling,::sampling],
+                units='xy', angles='xy', scale = max_vector_length*0.5/sampling)
+	qk = ax1.quiverkey(Q, 0.9, 0.9, 1, r'$1 \frac{m}{s}$', labelpos='E',
+                   coordinates='figure')
+	#ax1.scatter(X[::sampling,::sampling], Y[::sampling,::sampling], color='0.5', s=1)
+
+	plt.show()

@@ -26,7 +26,9 @@ if __name__ == '__main__':
 	F_test = ut.flow_read("C:/Users/eudal/Documents/M6/mcv-m6-2022-team6-main/data/results_opticalflow_kitti/results/LKflow_000045_10.png")
 
 	MSEN = ut.msen(F_gt, F_test)
+	PEPN = ut.pepn(F_gt, F_test, 0.5)
 	
 	print(MSEN)
+	print(PEPN)
 
-	input()
+	#ut.plotFlow(F_gt)
