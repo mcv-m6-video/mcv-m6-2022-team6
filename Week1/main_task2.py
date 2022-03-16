@@ -16,8 +16,9 @@ if __name__ == '__main__':
 
     display = False
     test_det = False
-    generate_noise = False
-    noisy_percent = 0
+    generate_noise = True
+    noisy_percent = 0.5
+    compare_detections_plot = False
 
     annotations = ut.read_annotations(annotations_path)
 
@@ -25,9 +26,11 @@ if __name__ == '__main__':
         detections = ut.annotations_to_detections(
             annotations, generate_noise, noisy_percent)
     else:
-        detections = ut.read_detections(detections_path['rcnn'])
-
+        detections = ut.read_detections(detections_path['yolo'])
+    if compare_detections_plot:
+        ut.plot_multiple_IoU(detections_path,annotations)
     score_for_each_frame = []
+    
     for frame_id in range(len(annotations)):
         score_for_each_frame.append(ut.get_frame_iou(
             annotations[frame_id], detections[frame_id]))
@@ -45,3 +48,4 @@ if __name__ == '__main__':
     print(rec)
     print(prec)
     print('AP score equal to {}'.format(ap))
+    print('mean IoU {}'.format(np.mean(score_for_each_frame)))
