@@ -3,6 +3,7 @@ import numpy as np
 from torchvision.io import read_video
 import cv2
 import random
+import matplotlib.pyplot as plt
 
 def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=False, dropout_p=0.5):
 
@@ -163,3 +164,21 @@ def display_frame(frame):
 	cv2.imshow('Frame', imS)
 	cv2.waitKey(0)  # waits until a key is pressed
 	cv2.destroyAllWindows()
+def plot_multiple_IoU(dict_of_detections,annotations):
+	fig, ax = plt.subplots(figsize=(10, 5))
+	detections = []
+	score_for_each_frame = []
+	for key in dict_of_detections:
+		detections = read_detections(dict_of_detections[key])
+		score_for_each_frame = []
+		for frame_id in range(len(annotations)):
+			score_for_each_frame.append(get_frame_iou(
+            annotations[frame_id], detections[frame_id]))
+		ax.plot(np.arange(0, len(annotations), 1), score_for_each_frame,label = key)
+	ax.set(xlabel='frame', ylabel='IoU')
+	ax.set_ylim(0, 1)
+	ax.set_xlim(0,len(annotations))
+	plt.legend()
+	plt.savefig('comparison_plot.png')
+	
+
