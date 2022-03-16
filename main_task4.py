@@ -23,12 +23,6 @@ if __name__ == '__main__':
 
 		
 	F_gt = ut.flow_read("data/results_opticalflow_kitti/groundtruth/000045_10.png")
-	F_test = ut.flow_read("data/results_opticalflow_kitti/results/LKflow_000045_10.png")
-
-	MSEN = ut.msen(F_gt, F_test)
-	PEPN = ut.pepn(F_gt, F_test, 0.5)
 	
-	print(MSEN)
-	print(PEPN)
 
-
+	ut.plotFlow(F_gt)
