@@ -19,15 +19,20 @@ if __name__ == '__main__':
 
 	for i in range(TRAIN_FRAMES, TEST_FRAMES):
 		frame = cv2.imread(frames_folder + "%04d.jpeg" % i, cv2.IMREAD_GRAYSCALE)
-		classify = classify_frame(mean, std, frame, alpha=3)
+		classify = classify_frame(mean, std, frame, alpha=5)
 
-		kernel = np.ones((5, 5), np.uint8)
-		opening = cv2.morphologyEx(classify, cv2.MORPH_OPEN, kernel)
+		kernel = np.ones((4, 4), np.uint8)
+		dilation = cv2.dilate(classify, kernel, iterations = 8)
+		erosion = cv2.erode(dilation, kernel, iterations = 2)
 
-		# frameRes = cv2.resize(frame, (960, 540))
-		# cv2.imshow('Frame', frameRes)
+		output = cv2.connectedComponentsWithStats(erosion)
+		frameRes = cv2.resize(frame, (960, 540))
+		cv2.imshow('Frame', frameRes)
+		for stats in output[2]:
+			if stats[4] > 1000 and stats[4] < 10000:
+				frameRes = cv2.rectangle(frameRes, (stats[0], stats[1]) , (stats[0]+stats[2], stats[1]+stats[3]), (0,0,255))
 
-		classiRes = cv2.resize(opening, (960, 540))
+		classiRes = cv2.resize(erosion, (960, 540))
 		cv2.imshow('Class', classiRes)
 		if cv2.waitKey(25) & 0xFF == ord('q'):
 			cv2.destroyAllWindows()
