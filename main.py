@@ -33,8 +33,7 @@ def task101():
 		ut.display_frame(frame)
 
 	#One frame
-	iou_frame = ut.get_frame_iou(annotations[frame_id], detections[frame_id]);
-	print(iou_frame)
+	iou_frame = ut.get_frame_iou(annotations[frame_id], detections[frame_id]);	
 	#rec, prec, ap = voc_evaluation.voc_eval(annotations, detections)
 
 	# Overall detections

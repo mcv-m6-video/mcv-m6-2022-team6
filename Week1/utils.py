@@ -4,7 +4,7 @@ from torchvision.io import read_video
 import cv2
 import random
 
-def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=False, dropout_p=0.5):
+def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=False, dropout_p=0.5,verbose=False):
 
 	detections = {}
 	for frame, value in annotations.items():
@@ -16,7 +16,8 @@ def annotations_to_detections(annotations, noisy=False, noisy_p=0.5, dropout=Fal
 				continue
 
 			bboxcpy = np.copy(bbox)
-			print(r_noise)
+			if verbose:	
+				print(r_noise)
 			if noisy and r_noise <= noisy_p:
 				rx = random.randint(500, 2000) / 100
 				ry = random.randint(500, 2000) / 100
@@ -72,24 +73,27 @@ def read_detections(path, confidenceThr=0.5):
 	"""
 	with open(path) as f:
 		lines = f.readlines()
-
+	len(lines)
 	detections = {}
+	dict_iter = 0
 	for line in lines:
 		det = line.split(sep=',')
-		if float(det[6]) > confidenceThr:
+		if float(det[6]) >= confidenceThr:
 
 			frame = int(det[0])
 			if frame - 1 not in detections:
 				detections[frame - 1] = []
-
-			detections[frame - 1].append({
+			detections[dict_iter] = []
+			detections[dict_iter].append({
 				"bbox": np.array([float(det[2]),
 				float(det[3]),
 				float(det[2]) + float(det[4]),
 				float(det[3]) + float(det[5])]),
 				"conf": float(det[6]),
-				"difficult": False
+				"difficult": False,
+				"frame":int(det[0]) - 1
 			})
+			dict_iter += 1
 
 	return detections
 
