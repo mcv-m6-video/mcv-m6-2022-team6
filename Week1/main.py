@@ -1,7 +1,8 @@
 import utils_week1 as ut
-import voc_evaluation_week1 as voc_evaluation
+import voc_evaluation
 import matplotlib.pyplot as plt
 import numpy as np
+
 # PATHS
 annotations_path = 'data/ai_challenge_s03_c010-full_annotation.xml'
 video_path = 'data/AICity_data/train/S03/c010/vdo.avi'

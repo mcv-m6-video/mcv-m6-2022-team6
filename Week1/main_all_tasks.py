@@ -1,5 +1,5 @@
 import utils_week1 as ut
-import voc_evaluation_week1 as voc_evaluation
+import voc_evaluation
 import matplotlib.pyplot as plt
 import numpy as np
 
