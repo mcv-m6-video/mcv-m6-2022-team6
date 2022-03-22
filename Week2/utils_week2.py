@@ -1,21 +1,17 @@
-import xmltodict
 import numpy as np
 from torchvision.io import read_video
-import cv2
-import random
 import matplotlib.pyplot as plt
 
 
 def plot_gaussian_model(u, sigma):
-	fig = plt.figure()
-	ax = fig.add_subplot(1, 2, 1)
-	imgplot = plt.imshow(u, cmap='gray')
-	ax.set_title('Mean')
-	ax = fig.add_subplot(1, 2, 2)
-	imgplot = plt.imshow(sigma, cmap='gray')
-	ax.set_title('Sigma')
+	plt.title("Mean")
+	plt.imshow(u, cmap='gray')
 	plt.show()
 
+	plt.title("Std")
+	plt.imshow(sigma, cmap=plt.get_cmap('Reds'))
+	plt.colorbar()
+	plt.show()
 
 def get_frames(video, frame=0):
 	return read_video(video)[0]
