@@ -13,10 +13,10 @@ The aim of this master module is to create a solution for the [AI City Challenge
 The module consists of 5 different deliveries that build up to a complete pipeline. Refer to the specifics `README.md` for further explanations, requirements and the complete code of each week.
 
 * [Week 1](Week1/README.md)
-
+* [Week 2](Week2/README.md)
 
 
 
 ## Contributors: Team 6
 - [Marcelo Sanchez Ortega](https://github.com/Marcelo5444) - [Email](marcelosanchezortega@gmail.com)
-
+- [Kevin Martín Fernández](https://github.com/kevinmf94) - [Email](kevinmf94@gmail.com)
