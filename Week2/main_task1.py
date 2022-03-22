@@ -1,10 +1,15 @@
 import math
 import cv2
 import numpy as np
-from utils_week2 import plot_gaussian_model, nms
-#from voc_evaluation_week2 import 
+import sys
 
-frames_folder = '../data/images/'
+from utils_week2 import plot_gaussian_model, nms
+
+sys.path.append("Week1")
+import utils_week1 
+import voc_evaluation 
+
+frames_folder = 'data/images/'
 TOTAL_FRAMES = 2141
 TRAIN_FRAMES = math.ceil(TOTAL_FRAMES * 0.25)
 TEST_FRAMES = math.ceil(TOTAL_FRAMES * 0.75)
@@ -22,8 +27,8 @@ def morph_filter(img):
 if __name__ == '__main__':
 
 	# Load gaussian model
-	mean = np.load('../data/gaussian_model_mean.npy')
-	std = np.load('../data/gaussian_model_std.npy')
+	mean = np.load('data/gaussian_model_mean.npy')
+	std = np.load('data/gaussian_model_std.npy')
 	#plot_gaussian_model(mean,std)
 	
 	for i in range(TRAIN_FRAMES, TEST_FRAMES):
