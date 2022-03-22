@@ -86,24 +86,27 @@ def read_detections(path, confidenceThr=0.5):
 	"""
 	with open(path) as f:
 		lines = f.readlines()
-
+	len(lines)
 	detections = {}
+	dict_iter = 0
 	for line in lines:
 		det = line.split(sep=',')
-		if float(det[6]) > confidenceThr:
+		if float(det[6]) >= confidenceThr:
 
 			frame = int(det[0])
 			if frame - 1 not in detections:
 				detections[frame - 1] = []
-
-			detections[frame - 1].append({
+			detections[dict_iter] = []
+			detections[dict_iter].append({
 				"bbox": np.array([float(det[2]),
 				float(det[3]),
 				float(det[2]) + float(det[4]),
 				float(det[3]) + float(det[5])]),
 				"conf": float(det[6]),
-				"difficult": False
+				"difficult": False,
+				"frame":int(det[0]) - 1
 			})
+			dict_iter += 1
 
 	return detections
 
