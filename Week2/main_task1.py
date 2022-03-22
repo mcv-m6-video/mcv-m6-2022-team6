@@ -29,7 +29,7 @@ def morph_filter(img, roi):
 
 if __name__ == '__main__':
 
-	alphas = [5]
+	alphas = [1, 3, 11]
 	for alpha in alphas:
 		#writer = imageio.get_writer("Week2/results/alpha_cars%02d.gif" % alpha, mode="I")
 
@@ -91,9 +91,5 @@ if __name__ == '__main__':
 		rec, prec, ap = voc_eval(annotations, detections)
 		print("Alpha %d" % alpha)
 		print("mAP: " + str(ap * 100))
-		"""fig, ax = plt.subplots()
-		ax.plot(frameIds, frameMeanZone)
-		ax.set(xlabel='Frame', ylabel='Mean')
-		ax.grid()
-		fig.savefig("illumination_zone.png")
-		plt.show()"""
+		print("Rec: " + str(np.mean(rec)))
+		print("Prec: " + str(np.mean(prec)))
