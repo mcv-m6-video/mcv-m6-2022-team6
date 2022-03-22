@@ -39,7 +39,8 @@ def voc_eval(gt_bboxs, det_bboxs, ovthresh=0.5,use_confidence=False):
     for frame, objs in det_bboxs.items():
         for obj in objs:
             image_ids.append(obj['frame'])
-            confidence.append(obj['conf'])  # unkwnown
+            if use_confidence:
+                confidence.append(obj['conf'])  # unkwnown
             BB.append(obj['bbox'])
     BB = np.array(BB)
     if use_confidence:

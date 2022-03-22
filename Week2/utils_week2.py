@@ -4,6 +4,10 @@ from torchvision.io import read_video
 import cv2
 import random
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('Week1')
+import utils_week1 as utils_week1
+import voc_evaluation_week1 as voc_evaluation
 
 
 def plot_gaussian_model(u, sigma):
@@ -325,3 +329,79 @@ def nms(dets, thresh):
         order = order[inds + 1]
 
     return keep
+def train_model(vidcap, train_len, bgsem):
+	print('Starting training model...')
+	for t in range(train_len):
+		_ ,frame = vidcap.read()
+		bgsem.apply(frame)
+	print('Done training model...')	
+	return bgsem
+
+def eval_sota(video, test_len, bgsem,return_detections=False,gt_path="data/AICity_data/train/S03/c010/ai_challenge_s03_c010-full_annotation.xml",roi_path = "data/AICity_data/train/S03/c010/roi.jpg"):    
+	print('evaluating sota model')
+	gt = utils_week1.read_annotations(gt_path)
+	#gt = read_detections(params['gt_path'], grouped=True)
+	frame_id = int(video.get(cv2.CAP_PROP_POS_FRAMES))
+
+	detections = {}
+	annotations = {}
+
+	for t in range(test_len):
+
+		_ ,frame = video.read()
+		
+		#print(t)
+
+		segmentation = bgsem.apply(frame)
+
+		roi = cv2.imread(roi_path, cv2.IMREAD_GRAYSCALE) / 255
+		segmentation = segmentation * roi
+		det_bboxes = fg_bboxes(segmentation, frame_id, roi)
+		if det_bboxes:			
+			detections[t] = []
+			detections[t].extend(det_bboxes)
+		#detections.append(det_bboxes)
+		
+
+		segmentation = cv2.cvtColor(segmentation.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+
+		gt_bboxes = []
+		if frame_id in gt:
+			gt_bboxes = gt[frame_id]
+		annotations[frame_id] = gt_bboxes
+
+		text_bboxes = "nbb" #no bouning boxes
+		
+
+		frame_id += 1
+
+	#detections = temporal_filter(group_by_frame(detections), init=init_frame, end=frame_id)
+	rec, prec, ap =voc_evaluation.voc_eval(annotations,detections, ovthresh=0.5, use_confidence=False)
+	return ap
+def fg_bboxes(seg, frame_id, roi):	
+	segmentation = seg * roi
+	_, contours, _ = cv2.findContours(segmentation.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	
+	bboxs = []
+	for c in contours:
+		rect = cv2.boundingRect(c)
+		if rect[2] < 50 or rect[3] < 50 or rect[2]/rect[3] < 0.8:
+			continue  # Discard small contours
+
+		x, y, w, h = rect		
+		bboxs.append({
+				#"bbox": np.array([float(x),
+				#float(y),
+				#float(w),
+				#float(h)]),
+				"bbox": np.array([float(x),
+				float(y),
+				float(x+w),
+				float(y+h)]),
+				"frame":frame_id
+			})
+		
+		
+		
+
+	return bboxs
