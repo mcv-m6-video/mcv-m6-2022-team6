@@ -195,7 +195,7 @@ def analyze_sequence(method, colorMap):
 		image = read_frame_colourspace(frame_path[0],colorMap)
 
 		image = backSub.apply(image)
-		process_image(image)
+		image = process_image(image)
 
 		# se debe añadir los metodos de deteccion
 		detections = detect_objects(image)
