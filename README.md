@@ -19,4 +19,6 @@ The focus of this module is to solve the problem of City-Scale Multi-Camera Vehi
 
 ## Contributors: Team 6
 - [Marcelo Sanchez Ortega](https://github.com/Marcelo5444) - [Email](marcelosanchezortega@gmail.com)
+- [Sergi Vidal Bazan](https://github.com/servidal) - [Email](servidal95@gmail.com)
+com)
 - [Kevin Martín Fernández](https://github.com/kevinmf94) - [Email](kevinmf94@gmail.com)
