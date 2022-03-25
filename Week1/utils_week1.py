@@ -41,7 +41,7 @@ def read_frame(video, frame=0):
 	img = frame.reshape(frame.shape[1:]).numpy();
 	return cv2.cvtColor(img, cv2.COLOR_BGR2RGB);
 
-def read_annotations(path):
+def read_annotations(path, use_parked=False):
 	with open(path) as f:
 		data = xmltodict.parse(f.read())
 		tracks = data['annotations']['track']
@@ -49,7 +49,7 @@ def read_annotations(path):
 
 	annotations = {}
 	for i in range(nframes):
-		annotations[i] = [];
+		annotations[i] = []  #creates an empy list equal to the number of frames (2141)
 
 	for track in tracks:
 		id = track['@id']
@@ -59,13 +59,12 @@ def read_annotations(path):
 			continue
 
 		for box in track['box']:
+			is_parked = box['attribute']['#text'] == 'true'
+			if not use_parked and is_parked:
+				continue
+			
 			frame = int(box['@frame'])
-			annotations[frame].append(np.array([
-				float(box['@xtl']),
-				float(box['@ytl']),
-				float(box['@xbr']),
-				float(box['@ybr']),
-			]))
+			annotations[frame].append(np.array([float(box['@xtl']), float(box['@ytl']), float(box['@xbr']), float(box['@ybr'])]))
 	return annotations
 
 def read_detections(path, confidenceThr=0.5):
@@ -82,8 +81,8 @@ def read_detections(path, confidenceThr=0.5):
 		if float(det[6]) >= confidenceThr:
 
 			frame = int(det[0])
-			if frame - 1 not in detections:
-				detections[frame - 1] = []
+			#if frame - 1 not in detections:
+			#	detections[frame - 1] = []
 			detections[dict_iter] = []
 			detections[dict_iter].append({
 				"bbox": np.array([float(det[2]),
@@ -99,8 +98,8 @@ def read_detections(path, confidenceThr=0.5):
 	return detections
 
 
-def get_rect_iou(a, b):
-	"""Return iou for a single a pair of boxes"""
+def get_rect_iou(a, b):  #intersection over union
+	"""Return iou for a pair of boxes"""
 	x11, y11, x12, y12 = a
 	x21, y21, x22, y22 = b
 
@@ -118,6 +117,26 @@ def get_rect_iou(a, b):
 
 	# IOU
 	return interArea / (boxAArea + boxBArea - interArea)
+
+def get_rect_ioa(a, b):  #intersection over areas
+	"""Return ioa for a pair of boxes"""
+	x11, y11, x12, y12 = a
+	x21, y21, x22, y22 = b
+
+	xA = max(x11, x21)
+	yA = max(y11, y21)
+	xB = min(x12, x22)
+	yB = min(y12, y22)
+
+	# respective area of ​​the two boxes
+	boxAArea = (x12 - x11) * (y12 - y11)
+	boxBArea = (x22 - x21) * (y22 - y21)
+
+	# overlap area
+	interArea = max(xB - xA, 0) * max(yB - yA, 0)
+
+	# IOA
+	return interArea / boxAArea, interArea / boxBArea
 
 
 def get_frame_iou(gt_rects, det_rects):
