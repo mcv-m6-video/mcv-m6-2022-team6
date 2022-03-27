@@ -43,20 +43,20 @@ class TrackingIOU(TrackingBase):
 
 		new_frame = []
 		for bbox in bboxes:
-			best_track = self.find_best_iou(bbox, self._last_frame)
+			track_selected = self.find_best_iou(bbox, self._last_frame)
 
-			if not best_track:
+			if track_selected:
+				track_selected['bbox'] = bbox;
+				track_selected['frame'] = frame;
+				self._tracks[track_selected['id']].append(track_selected)
+				new_frame.append(track_selected);
+			else:
 				assignedId = self.generate_id();
 				self._tracks[assignedId] = [];
 				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox,
-							 "color": self._colours[assignedId - 1]}
+							"color": self._colours[assignedId - 1]}
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
-			else:
-				best_track['bbox'] = bbox;
-				best_track['frame'] = frame;
-				self._tracks[best_track['id']].append(best_track)
-				new_frame.append(best_track);
 
 		self._last_frame = new_frame;
 
@@ -71,38 +71,44 @@ class TrackingKalman(TrackingBase):
 
 	def generate_track(self, frame, bboxes):
 
-		if not (frame - 1) in self._tracks:
-			self._tracks[frame - 1] = []
-
-		self._tracks[frame] = [];
+		new_frame = []
 		tracks_found = []
 		for bbox in bboxes:
-			track_selected = self.find_best_iou(bbox, self._tracks[frame - 1])
+			track_selected = self.find_best_iou(bbox, self._last_frame)
 
 			if track_selected:
 				trackId = track_selected['id'];
 				tracks_found.append(trackId)
-				track_selected['bbox'] = bbox
+				track_selected['bbox'] = bbox;
+				track_selected['frame'] = frame;
+				self._tracks[trackId].append(track_selected)
+				new_frame.append(track_selected);
 				self.kalman_tracking[trackId].update_state(frame, bbox);
 			else:
 				trackId = self.generate_id();
 				self.kalman_tracking[trackId] = TrackingKalmanItem(bbox);
-				track_selected = {"id": trackId, "bbox": bbox,
-								  "color": self._colours[trackId]};
+				self._tracks[trackId] = [];
+				newTrack = {"id": trackId, "frame": frame, "bbox": bbox,
+							"color": self._colours[trackId - 1]}
+				self._tracks[trackId].append(newTrack)
+				new_frame.append(newTrack);
 
-			self._tracks[frame].append(track_selected);
 
-		for key, value in self.kalman_tracking.items():
-			if not key in tracks_found:
+
+		for trackId, value in self.kalman_tracking.items():
+			if not trackId in tracks_found:
 				bbox = value.update(frame)[1];
-				print(bbox)
+				lastbbox = self._tracks[trackId][-1]['bbox'];
 				if bbox[0] > 0 and bbox[1] > 0 and bbox[0] + bbox[2] > 100 \
-						and bbox[1] + bbox[3] > 100:
-					track_selected = {"id": key, "bbox": bbox,
-									  "color": self._colours[key]};
-					self._tracks[frame].append(track_selected);
+						and bbox[1] + bbox[3] > 100 and uw1.get_rect_iou(bbox, lastbbox) < 0.9:
+					newTrack = {"id": trackId, "frame": frame, "bbox": bbox,
+								"color": self._colours[trackId - 1]}
+					new_frame.append(newTrack);
+					self._tracks[trackId].append(newTrack)
 
-		return self._tracks[frame]
+		self._last_frame = new_frame;
+
+		return new_frame
 
 
 class TrackingKalmanItem(object):

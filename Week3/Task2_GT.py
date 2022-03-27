@@ -18,7 +18,7 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
 	parser.add_argument('--iou_th', default=0.3)
-	parser.add_argument('--tracker', default='iou')
+	parser.add_argument('--tracker', default='kalman')
 	args = parser.parse_args()
 
 	annotations = uw1.read_annotations(annotations_path, False);
