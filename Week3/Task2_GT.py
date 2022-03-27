@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 
 import Week1.utils_week1 as uw1
-from TrackingMov import TrackingMov
+from Tracking import TrackingOverlap, TrackingKalman
 import cv2
 
 annotations_path = '../data/ai_challenge_s03_c010-full_annotation.xml'
@@ -18,15 +18,15 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
 	parser.add_argument('--iou_th', default=0.5)
-	parser.add_argument('--tracker', default='mov')
+	parser.add_argument('--tracker', default='overlap')
 	args = parser.parse_args()
 
 	annotations = uw1.read_annotations(annotations_path, False);
 
-	if args.tracker == "mov":
-		tracker = TrackingMov(args.iou_th);
-	else:
-		tracker = TrackingMov(args.iou_th);
+	if args.tracker == "overlap":
+		tracker = TrackingOverlap(args.iou_th);
+	elif args.tracker == "kalman":
+		tracker = TrackingKalman(args.iou_th);
 
 	for i in range(TOTAL_FRAMES):
 		frameId = i + 1;
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 		tracks = tracker.generate_track(i, bboxes)
 		if len(tracks) > 0:
 			for track in tracks:
-				img = draw_bbox(img, track['bbox'], track["id"])
+				img = draw_bbox(img, track['bbox'], track["id"], track['color'])
 
 		# Show
 		cv2.imshow('Video', img)
