@@ -17,7 +17,7 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
-	parser.add_argument('--iou_th', default=0.5)
+	parser.add_argument('--iou_th', default=0.3)
 	parser.add_argument('--tracker', default='iou')
 	args = parser.parse_args()
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 	elif args.tracker == "kalman":
 		tracker = TrackingKalman(args.iou_th);
 
-	for i in range(TOTAL_FRAMES):
+	for i in range(500, TOTAL_FRAMES):
 		frameId = i + 1;
 		print("Frame %04d of %04d" % (frameId, TOTAL_FRAMES));
 		img = cv2.imread("../data/images/%04d.jpeg" % frameId);
