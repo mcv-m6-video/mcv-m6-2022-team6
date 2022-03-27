@@ -11,7 +11,7 @@ class TrackingBase(object):
 	def generate_track(self, frame, bboxes):
 		raise NotImplementedError("Not implemented this method")
 
-class TrackingOverlap(TrackingBase):
+class TrackingIOU(TrackingBase):
 
 	def __init__(self, iou_th=0.5):
 		self._iou_th = iou_th;
