@@ -3,6 +3,7 @@ from filterpy.kalman import KalmanFilter
 
 import Week1.utils_week1 as uw1
 import numpy as np
+from sort import *
 
 
 class TrackingBase(object):
@@ -181,3 +182,50 @@ class TrackingKalmanItem(object):
 			xyxy = [x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2., score]
 
 		return np.array([xyxy[0], xyxy[1], xyxy[2] - xyxy[0], xyxy[3] - xyxy[1]]).reshape((1, len(xyxy)))
+
+
+class TrackingKalmanSort(TrackingBase):
+
+	def __init__(self, iou_th=0.5):
+		super().__init__(iou_th)
+		self.sort = Sort()
+
+	def generate_track(self, frame, bboxes):
+
+		for i in range(len(bboxes)):
+			bboxes[i] = np.hstack((bboxes[i], [1]))
+
+		if len(bboxes) == 0:
+			bboxes = np.empty((0, 5))
+
+		predicted = self.sort.update(bboxes)
+
+		new_frame = []
+		for i in range(len(predicted)):
+			tracker = self.sort.trackers[i]
+			bbox = self.sort.trackers[i].get_state()[0]
+			newTrack = {"id": tracker.id, "frame": frame, "bbox": bbox,
+						"color": self._colours[tracker.id]}
+			new_frame.append(newTrack)
+
+		"""new_frame = []
+		for bbox in predicted:
+			track_selected = self.find_best_iou(bbox, self._last_frame)
+
+			if track_selected:
+				trackId = track_selected['id'];
+				track_selected['bbox'] = bbox;
+				track_selected['frame'] = frame;
+				self._tracks[trackId].append(track_selected)
+				new_frame.append(track_selected);
+			else:
+				trackId = self.generate_id();
+				self._tracks[trackId] = [];
+				newTrack = {"id": trackId, "frame": frame, "bbox": bbox,
+							"color": self._colours[trackId - 1]}
+				self._tracks[trackId].append(newTrack)
+				new_frame.append(newTrack);
+
+		self._last_frame = new_frame"""
+
+		return new_frame

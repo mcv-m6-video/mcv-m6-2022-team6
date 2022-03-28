@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 
 import Week1.utils_week1 as uw1
-from Tracking import TrackingIOU, TrackingKalman
+from Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort
 import cv2
 
 annotations_path = '../data/ai_challenge_s03_c010-full_annotation.xml'
@@ -18,7 +18,7 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
 	parser.add_argument('--iou_th', default=0.3)
-	parser.add_argument('--tracker', default='kalman')
+	parser.add_argument('--tracker', default='kalmansort')
 	args = parser.parse_args()
 
 	annotations = uw1.read_annotations(annotations_path, False);
@@ -27,6 +27,9 @@ if __name__ == '__main__':
 		tracker = TrackingIOU(args.iou_th);
 	elif args.tracker == "kalman":
 		tracker = TrackingKalman(args.iou_th);
+	elif args.tracker == "kalmansort":
+		tracker = TrackingKalmanSort(args.iou_th)
+
 
 	for i in range(500, TOTAL_FRAMES):
 		frameId = i + 1;
@@ -40,7 +43,7 @@ if __name__ == '__main__':
 				img = draw_bbox(img, track['bbox'], track["id"], track['color'])
 
 		# Show
-		cv2.imshow('Video', img)
+		cv2.imshow('Video', cv2.resize(img, (1920//2, 1080//2)))
 		if cv2.waitKey(10) & 0xFF == ord('q'):
 			cv2.destroyAllWindows()
 			break
