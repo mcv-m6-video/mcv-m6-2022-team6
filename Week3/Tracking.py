@@ -208,24 +208,4 @@ class TrackingKalmanSort(TrackingBase):
 						"color": self._colours[tracker.id]}
 			new_frame.append(newTrack)
 
-		"""new_frame = []
-		for bbox in predicted:
-			track_selected = self.find_best_iou(bbox, self._last_frame)
-
-			if track_selected:
-				trackId = track_selected['id'];
-				track_selected['bbox'] = bbox;
-				track_selected['frame'] = frame;
-				self._tracks[trackId].append(track_selected)
-				new_frame.append(track_selected);
-			else:
-				trackId = self.generate_id();
-				self._tracks[trackId] = [];
-				newTrack = {"id": trackId, "frame": frame, "bbox": bbox,
-							"color": self._colours[trackId - 1]}
-				self._tracks[trackId].append(newTrack)
-				new_frame.append(newTrack);
-
-		self._last_frame = new_frame"""
-
 		return new_frame
