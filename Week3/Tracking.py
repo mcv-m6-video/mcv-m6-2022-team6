@@ -1,10 +1,8 @@
 import abc
-from filterpy.kalman import KalmanFilter
 
 import Week1.utils_week1 as uw1
-import numpy as np
 from sort import *
-
+import motmetrics as mm
 
 class TrackingBase(object):
 	_tracks = {}
@@ -12,8 +10,15 @@ class TrackingBase(object):
 	_colours = np.random.rand(200, 3) * 255
 	_last_frame = []
 
-	def __init__(self, iou_th=0.5):
+	# Create an accumulator that will be updated during each frame
+	_acc = mm.MOTAccumulator(auto_id=True)
+	_gt_ids = []
+	_gt_bbox = [];
+
+	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
 		self._iou_th = iou_th;
+		self._gt_ids = gt_ids;
+		self._gt_bbox = gt_bbox;
 
 	@abc.abstractmethod
 	def generate_track(self, frame, bboxes):
@@ -34,11 +39,30 @@ class TrackingBase(object):
 		self._trackingId += 1
 		return assignedId
 
+	def update_metrics(self, frame, tracks, tracks_prev):
+
+		detected_ids = []
+		gt_ids = self._gt_ids[frame];
+		gt_bboxes = np.array(self._gt_bbox[frame]).astype(np.uint32);
+		distances = []
+		for track in tracks_prev:
+			distances_track = [];
+			detected_ids.append(track['id']);
+			for bbox in gt_bboxes:
+				distances_track.append(uw1.get_rect_iou(bbox, track['bbox']))
+
+			distances.append(distances_track)
+
+		self._acc.update(gt_ids, detected_ids, distances)
+
+	def get_IDF1(self):
+		mh = mm.metrics.create()
+		return mh.compute(self._acc, metrics=['num_frames', 'idf1'], name='acc')
 
 class TrackingIOU(TrackingBase):
 
-	def __init__(self, iou_th=0.5):
-		super().__init__(iou_th)
+	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
+		super().__init__(gt_ids, gt_bbox, iou_th)
 
 	def generate_track(self, frame, bboxes):
 
@@ -59,15 +83,17 @@ class TrackingIOU(TrackingBase):
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
 
+		self.update_metrics(frame, new_frame, self._last_frame)
 		self._last_frame = new_frame;
+
 
 		return new_frame
 
 
 class TrackingKalman(TrackingBase):
 
-	def __init__(self, iou_th=0.5):
-		super().__init__(iou_th)
+	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
+		super().__init__(gt_ids, gt_bbox, iou_th)
 		self.kalman_tracking = {};
 
 	def generate_track(self, frame, bboxes):
@@ -93,8 +119,6 @@ class TrackingKalman(TrackingBase):
 							"color": self._colours[trackId - 1]}
 				self._tracks[trackId].append(newTrack)
 				new_frame.append(newTrack);
-
-
 
 		for trackId, value in self.kalman_tracking.items():
 			if not trackId in tracks_found:
@@ -186,8 +210,8 @@ class TrackingKalmanItem(object):
 
 class TrackingKalmanSort(TrackingBase):
 
-	def __init__(self, iou_th=0.5):
-		super().__init__(iou_th)
+	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
+		super().__init__(gt_ids, gt_bbox, iou_th)
 		self.sort = Sort(iou_threshold=iou_th)
 
 	def generate_track(self, frame, bboxes):

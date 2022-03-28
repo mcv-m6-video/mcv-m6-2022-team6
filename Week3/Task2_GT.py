@@ -1,7 +1,8 @@
 import argparse
 import numpy as np
+import motmetrics as mm
 
-import Week1.utils_week1 as uw1
+import utils_week3 as uw3
 from Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort
 import cv2
 
@@ -17,21 +18,21 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
-	parser.add_argument('--iou_th', default=0.3)
-	parser.add_argument('--tracker', default='kalmansort')
+	parser.add_argument('--iou_th', default=0.1)
+	parser.add_argument('--tracker', default='iou')
 	args = parser.parse_args()
 
-	annotations = uw1.read_annotations(annotations_path, False);
+	gt_ids, annotations = uw3.read_annotations(annotations_path, False);
 
 	if args.tracker == "iou":
-		tracker = TrackingIOU(args.iou_th);
+		tracker = TrackingIOU(gt_ids, annotations, args.iou_th);
 	elif args.tracker == "kalman":
-		tracker = TrackingKalman(args.iou_th);
+		tracker = TrackingKalman(gt_ids, annotations, args.iou_th);
 	elif args.tracker == "kalmansort":
-		tracker = TrackingKalmanSort(args.iou_th)
+		tracker = TrackingKalmanSort(gt_ids, annotations, args.iou_th)
 
 
-	for i in range(500, TOTAL_FRAMES):
+	for i in range(0, TOTAL_FRAMES):
 		frameId = i + 1;
 		print("Frame %04d of %04d" % (frameId, TOTAL_FRAMES));
 		img = cv2.imread("../data/images/%04d.jpeg" % frameId);
@@ -47,3 +48,6 @@ if __name__ == '__main__':
 		if cv2.waitKey(10) & 0xFF == ord('q'):
 			cv2.destroyAllWindows()
 			break
+
+	results = tracker.get_IDF1()
+	print(results);
