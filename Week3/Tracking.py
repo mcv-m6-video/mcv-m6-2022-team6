@@ -188,7 +188,7 @@ class TrackingKalmanSort(TrackingBase):
 
 	def __init__(self, iou_th=0.5):
 		super().__init__(iou_th)
-		self.sort = Sort()
+		self.sort = Sort(iou_threshold=iou_th)
 
 	def generate_track(self, frame, bboxes):
 

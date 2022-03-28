@@ -19,7 +19,7 @@ import numpy as np
 
 CLASS_CAR = 2;
 TOTAL_FRAMES = 2141
-
+SHOW_VIDEO = False
 
 def configure_detectron():
 	cfg = get_cfg()
@@ -44,18 +44,19 @@ if __name__ == '__main__':
 	cfg = configure_detectron()
 	predictor = DefaultPredictor(cfg)
 
-	for i in range(TOTAL_FRAMES + 1):
+	for i in range(1, TOTAL_FRAMES + 1):
 		print("Frame %04d of %04d" % (i, TOTAL_FRAMES));
 		im = cv2.imread("../data/images/%04d.jpeg" % i)
 		outputs = predictor(im)
 		instances = filter_class(outputs, CLASS_CAR)
-		np.save('../data/detections/frame_bboxes_%04d.npy' % i, instances.pred_boxes.tensor.numpy())
+		#np.save('../data/detections/frame_bboxes_%04d.npy' % i, instances.pred_boxes.tensor.numpy())
 
-		"""v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
-		out = v.draw_instance_predictions(instances)"""
+		v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+		out = v.draw_instance_predictions(instances)
 
 		# Show
-		"""cv2.imshow('Video', out.get_image()[:, :, ::-1])
-		if cv2.waitKey(10) & 0xFF == ord('q'):
-			cv2.destroyAllWindows()
-			break"""
+		if SHOW_VIDEO:
+			cv2.imshow('Video', out.get_image()[:, :, ::-1])
+			if cv2.waitKey(10) & 0xFF == ord('q'):
+				cv2.destroyAllWindows()
+				break
