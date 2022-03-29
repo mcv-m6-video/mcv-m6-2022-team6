@@ -1,7 +1,7 @@
 import abc
 import copy
 
-import Week1.utils_week1 as uw1
+import utils_week1 as uw1
 from sort import *
 import motmetrics as mm
 
@@ -9,7 +9,7 @@ import motmetrics as mm
 class TrackingBase(object):
 	_tracks = {}
 	_trackingId = 1;
-	_colours = np.random.rand(1000, 3) * 255
+	_colours = np.random.rand(2000, 3) * 255
 	_last_frame = []
 
 	# Create an accumulator that will be updated during each frame
@@ -18,7 +18,7 @@ class TrackingBase(object):
 	_gt_bbox = [];
 
 	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
-		self._iou_th = iou_th;
+		self._iou_th = float(iou_th);
 		self._gt_ids = gt_ids;
 		self._gt_bbox = gt_bbox;
 
@@ -103,7 +103,7 @@ class TrackingIOU(TrackingBase):
 				assignedId = self.generate_id();
 				self._tracks[assignedId] = [];
 				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox_norm,
-							"color": self._colours[assignedId - 1]}
+							"color": self._colours[(assignedId - 1) % 2000]}
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
 
@@ -279,8 +279,8 @@ class TrackingKalmanItem(object):
 class TrackingKalmanSort(TrackingBase):
 
 	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
-		super().__init__(gt_ids, gt_bbox, iou_th)
-		self.sort = Sort(iou_threshold=iou_th)
+		super().__init__(gt_ids, gt_bbox, float(iou_th))
+		self.sort = Sort(iou_threshold=float(iou_th), max_age=5)
 
 	def generate_track(self, frame, bboxes):
 
