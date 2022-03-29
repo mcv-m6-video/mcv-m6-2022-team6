@@ -14,6 +14,7 @@ The focus of this module is to solve the problem of City-Scale Multi-Camera Vehi
 
 * [Week 1](Week1/README.md)
 * [Week 2](Week2/README.md)
+* [Week 3](Week3/README.md)
 
 
 
