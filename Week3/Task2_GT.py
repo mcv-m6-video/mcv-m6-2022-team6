@@ -7,6 +7,7 @@ import cv2
 
 annotations_path = '../data/ai_challenge_s03_c010-full_annotation.xml'
 TOTAL_FRAMES = 2141
+SHOW_VIDEO = False
 
 
 def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
@@ -51,11 +52,11 @@ if __name__ == '__main__':
 				img = draw_bbox(img, track['bbox'], track["id"], track['color'])
 
 		# Show
-		cv2.imshow('Video', cv2.resize(img, (1920//2, 1080//2)))
-		#cv2.waitKey(0)
-		if cv2.waitKey(10) & 0xFF == ord('q'):
-			cv2.destroyAllWindows()
-			break
+		if SHOW_VIDEO:
+			cv2.imshow('Video', cv2.resize(img, (1920//2, 1080//2)))
+			if cv2.waitKey(10) & 0xFF == ord('q'):
+				cv2.destroyAllWindows()
+				break
 
 	results = tracker.get_IDF1()
 	print(results);
