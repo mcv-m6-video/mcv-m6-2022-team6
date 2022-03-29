@@ -2,12 +2,11 @@ import argparse
 import numpy as np
 
 import utils_week3 as uw3
-from Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort
+from Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort, TrackingIOUDirection
 import cv2
 
 annotations_path = '../data/ai_challenge_s03_c010-full_annotation.xml'
 TOTAL_FRAMES = 2141
-SHOW_VIDEO = False
 
 
 def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
@@ -19,8 +18,9 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
 	parser.add_argument('--iou_th', default=0.4)
-	parser.add_argument('--tracker', default='iou')
+	parser.add_argument('--tracker', default='iou_direction')
 	parser.add_argument('--input', default='gt')
+	parser.add_argument('--preview', default=True)
 	args = parser.parse_args()
 
 	if args.input == "gt":
@@ -30,6 +30,8 @@ if __name__ == '__main__':
 
 	if args.tracker == "iou":
 		tracker = TrackingIOU(gt_ids, annotations, args.iou_th);
+	elif args.tracker == "iou_direction":
+		tracker = TrackingIOUDirection(gt_ids, annotations, args.iou_th);
 	elif args.tracker == "kalman":
 		tracker = TrackingKalman(gt_ids, annotations, args.iou_th);
 	elif args.tracker == "kalmansort":
@@ -39,20 +41,22 @@ if __name__ == '__main__':
 		detections = annotations
 	elif args.input == "retinanet101":
 		detections = uw3.read_detections('../data/detections/retinanet_R_50_FPN_3x/detections.txt');
+	elif args.input == "faster50":
+		detections = uw3.read_detections('../data/detections/faster_rcnn_R_50_FPN_3x/detections.txt');
 
-	for i in range(228, TOTAL_FRAMES):
+	for i in range(0, TOTAL_FRAMES):
 		frameId = i + 1;
 		print("Frame %04d of %04d" % (frameId, TOTAL_FRAMES));
 		img = cv2.imread("../data/images/%04d.jpeg" % frameId);
 		bboxes = detections[i]
 
 		tracks = tracker.generate_track(i, bboxes)
-		if len(tracks) > 0:
-			for track in tracks:
-				img = draw_bbox(img, track['bbox'], track["id"], track['color'])
+		if args.preview:
+			if len(tracks) > 0:
+				for track in tracks:
+					img = draw_bbox(img, track['bbox'], track["id"], track['color'])
 
-		# Show
-		if SHOW_VIDEO:
+			# Show
 			cv2.imshow('Video', cv2.resize(img, (1920//2, 1080//2)))
 			if cv2.waitKey(10) & 0xFF == ord('q'):
 				cv2.destroyAllWindows()

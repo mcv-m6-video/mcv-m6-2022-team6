@@ -1,4 +1,5 @@
 import abc
+import copy
 
 import Week1.utils_week1 as uw1
 from sort import *
@@ -25,13 +26,31 @@ class TrackingBase(object):
 	def generate_track(self, frame, bboxes):
 		raise NotImplementedError("Not implemented this method")
 
-	def find_best_iou(self, bbox, tracks):
+	def unit_vector(self, vector):
+		""" Returns the unit vector of the vector.  """
+		return vector / np.linalg.norm(vector)
+
+	def angle_between(self, v1, v2):
+		v1_u = self.unit_vector(v1)
+		v2_u = self.unit_vector(v2)
+		return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+	def find_best_iou(self, bbox, tracks, ids_selected, direction=False):
 		best_track = None
 		best_iou = 0
+		center = (bbox[0:2] + bbox[2:4])//2
 		for track in tracks:
+			if track['id'] in ids_selected:
+				continue
+
 			iou = uw1.get_rect_iou(bbox, track['bbox'])
 			if iou >= self._iou_th and best_iou < iou:
-				best_track = track
+				if direction and track['angle'] is not None \
+						and np.linalg.norm(self.angle_between(center, track['center']) - track['angle']) > 0.5:
+					continue
+
+				best_track = copy.deepcopy(track)
+
 
 		return best_track
 
@@ -69,11 +88,13 @@ class TrackingIOU(TrackingBase):
 	def generate_track(self, frame, bboxes):
 
 		new_frame = []
+		id_selected = []
 		for bbox in bboxes:
 			bbox_norm = bbox[0:4].astype(np.int32)
-			track_selected = self.find_best_iou(bbox_norm, self._last_frame)
+			track_selected = self.find_best_iou(bbox_norm, self._last_frame, id_selected)
 
 			if track_selected:
+				id_selected.append(track_selected['id'])
 				track_selected['bbox'] = bbox_norm;
 				track_selected['frame'] = frame;
 				self._tracks[track_selected['id']].append(track_selected)
@@ -83,6 +104,46 @@ class TrackingIOU(TrackingBase):
 				self._tracks[assignedId] = [];
 				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox_norm,
 							"color": self._colours[assignedId - 1]}
+				self._tracks[assignedId].append(newTrack)
+				new_frame.append(newTrack);
+
+		self.update_metrics(frame, self._last_frame)
+		self._last_frame = new_frame;
+
+		return new_frame
+
+
+class TrackingIOUDirection(TrackingBase):
+
+	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
+		super().__init__(gt_ids, gt_bbox, iou_th)
+
+	def generate_track(self, frame, bboxes):
+
+		new_frame = []
+		id_selected = []
+		for bbox in bboxes:
+			bbox_norm = bbox[0:4].astype(np.int32)
+			track_selected = self.find_best_iou(bbox_norm, self._last_frame, id_selected, direction=True)
+
+			if track_selected:
+				id_selected.append(track_selected['id'])
+				track_selected['bbox'] = bbox_norm;
+				track_selected['frame'] = frame;
+				last_center = track_selected['center'];
+				track_selected['center'] = (bbox_norm[0:2] + bbox_norm[2:4])//2;
+				if last_center is not None:
+					track_selected['angle'] = self.angle_between(last_center, track_selected['center']);
+
+				self._tracks[track_selected['id']].append(track_selected)
+				new_frame.append(track_selected);
+			else:
+				assignedId = self.generate_id();
+				self._tracks[assignedId] = [];
+				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox_norm,
+							"color": self._colours[assignedId - 1],
+							"center": (bbox_norm[0:2] + bbox_norm[2:4])//2,
+							"angle": None}
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
 
@@ -102,11 +163,15 @@ class TrackingKalman(TrackingBase):
 
 		new_frame = []
 		tracks_found = []
+		id_selected = []
 		for bbox in bboxes:
 			bbox_norm = bbox[0:4].astype(np.int32);
-			track_selected = self.find_best_iou(bbox_norm, self._last_frame)
+			track_selected = self.find_best_iou(bbox_norm, self._last_frame, id_selected)
+
+
 			if track_selected:
 				trackId = track_selected['id'];
+				id_selected.append(trackId)
 				tracks_found.append(trackId)
 				track_selected['bbox'] = bbox_norm;
 				track_selected['frame'] = frame;
