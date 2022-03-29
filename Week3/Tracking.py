@@ -4,10 +4,11 @@ import Week1.utils_week1 as uw1
 from sort import *
 import motmetrics as mm
 
+
 class TrackingBase(object):
 	_tracks = {}
 	_trackingId = 1;
-	_colours = np.random.rand(200, 3) * 255
+	_colours = np.random.rand(1000, 3) * 255
 	_last_frame = []
 
 	# Create an accumulator that will be updated during each frame
@@ -39,17 +40,17 @@ class TrackingBase(object):
 		self._trackingId += 1
 		return assignedId
 
-	def update_metrics(self, frame, tracks, tracks_prev):
+	def update_metrics(self, frame, tracks_prev):
 
 		detected_ids = []
 		gt_ids = self._gt_ids[frame];
-		gt_bboxes = np.array(self._gt_bbox[frame]).astype(np.uint32);
+		gt_bboxes = np.array(self._gt_bbox[frame]).astype(np.int32);
 		distances = []
 		for track in tracks_prev:
 			distances_track = [];
 			detected_ids.append(track['id']);
 			for bbox in gt_bboxes:
-				distances_track.append(uw1.get_rect_iou(bbox, track['bbox']))
+				distances_track.append(uw1.get_rect_iou(bbox[0:4], track['bbox']))
 
 			distances.append(distances_track)
 
@@ -58,6 +59,7 @@ class TrackingBase(object):
 	def get_IDF1(self):
 		mh = mm.metrics.create()
 		return mh.compute(self._acc, metrics=['num_frames', 'idf1'], name='acc')
+
 
 class TrackingIOU(TrackingBase):
 
@@ -68,24 +70,24 @@ class TrackingIOU(TrackingBase):
 
 		new_frame = []
 		for bbox in bboxes:
-			track_selected = self.find_best_iou(bbox, self._last_frame)
+			bbox_norm = bbox[0:4].astype(np.int32)
+			track_selected = self.find_best_iou(bbox_norm, self._last_frame)
 
 			if track_selected:
-				track_selected['bbox'] = bbox;
+				track_selected['bbox'] = bbox_norm;
 				track_selected['frame'] = frame;
 				self._tracks[track_selected['id']].append(track_selected)
 				new_frame.append(track_selected);
 			else:
 				assignedId = self.generate_id();
 				self._tracks[assignedId] = [];
-				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox,
+				newTrack = {"id": assignedId, "frame": frame, "bbox": bbox_norm,
 							"color": self._colours[assignedId - 1]}
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
 
-		self.update_metrics(frame, new_frame, self._last_frame)
+		self.update_metrics(frame, self._last_frame)
 		self._last_frame = new_frame;
-
 
 		return new_frame
 
@@ -101,12 +103,12 @@ class TrackingKalman(TrackingBase):
 		new_frame = []
 		tracks_found = []
 		for bbox in bboxes:
-			track_selected = self.find_best_iou(bbox, self._last_frame)
-
+			bbox_norm = bbox[0:4].astype(np.int32);
+			track_selected = self.find_best_iou(bbox_norm, self._last_frame)
 			if track_selected:
 				trackId = track_selected['id'];
 				tracks_found.append(trackId)
-				track_selected['bbox'] = bbox;
+				track_selected['bbox'] = bbox_norm;
 				track_selected['frame'] = frame;
 				self._tracks[trackId].append(track_selected)
 				new_frame.append(track_selected);
@@ -115,14 +117,14 @@ class TrackingKalman(TrackingBase):
 				trackId = self.generate_id();
 				self.kalman_tracking[trackId] = TrackingKalmanItem(bbox);
 				self._tracks[trackId] = [];
-				newTrack = {"id": trackId, "frame": frame, "bbox": bbox,
+				newTrack = {"id": trackId, "frame": frame, "bbox": bbox_norm,
 							"color": self._colours[trackId - 1]}
 				self._tracks[trackId].append(newTrack)
 				new_frame.append(newTrack);
 
 		for trackId, value in self.kalman_tracking.items():
 			if not trackId in tracks_found:
-				bbox = value.update(frame)[1];
+				bbox = value.update(frame)[1].astype(np.int32);
 				lastbbox = self._tracks[trackId][-1]['bbox'];
 				if bbox[0] > 0 and bbox[1] > 0 and bbox[0] + bbox[2] > 100 \
 						and bbox[1] + bbox[3] > 100 and uw1.get_rect_iou(bbox, lastbbox) < 0.9:
@@ -131,6 +133,7 @@ class TrackingKalman(TrackingBase):
 					new_frame.append(newTrack);
 					self._tracks[trackId].append(newTrack)
 
+		self.update_metrics(frame, self._last_frame)
 		self._last_frame = new_frame;
 
 		return new_frame
@@ -216,9 +219,6 @@ class TrackingKalmanSort(TrackingBase):
 
 	def generate_track(self, frame, bboxes):
 
-		for i in range(len(bboxes)):
-			bboxes[i] = np.hstack((bboxes[i], [1]))
-
 		if len(bboxes) == 0:
 			bboxes = np.empty((0, 5))
 
@@ -228,8 +228,11 @@ class TrackingKalmanSort(TrackingBase):
 		for i in range(len(predicted)):
 			tracker = self.sort.trackers[i]
 			bbox = self.sort.trackers[i].get_state()[0]
-			newTrack = {"id": tracker.id, "frame": frame, "bbox": bbox,
+			newTrack = {"id": tracker.id, "frame": frame, "bbox": bbox.astype(np.int32),
 						"color": self._colours[tracker.id]}
 			new_frame.append(newTrack)
+
+		self.update_metrics(frame, self._last_frame)
+		self._last_frame = new_frame
 
 		return new_frame

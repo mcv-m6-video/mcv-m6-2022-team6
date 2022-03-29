@@ -3,4 +3,3 @@ data/images
 ffmpeg
 .idea
 __pycache__
-data/detections

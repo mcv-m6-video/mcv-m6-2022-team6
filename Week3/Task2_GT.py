@@ -1,6 +1,5 @@
 import argparse
 import numpy as np
-import motmetrics as mm
 
 import utils_week3 as uw3
 from Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort
@@ -18,11 +17,15 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
-	parser.add_argument('--iou_th', default=0.1)
+	parser.add_argument('--iou_th', default=0.4)
 	parser.add_argument('--tracker', default='iou')
+	parser.add_argument('--input', default='gt')
 	args = parser.parse_args()
 
-	gt_ids, annotations = uw3.read_annotations(annotations_path, False);
+	if args.input == "gt":
+		gt_ids, annotations = uw3.read_annotations(annotations_path, False);
+	else:
+		gt_ids, annotations = uw3.read_annotations(annotations_path, True);
 
 	if args.tracker == "iou":
 		tracker = TrackingIOU(gt_ids, annotations, args.iou_th);
@@ -31,12 +34,16 @@ if __name__ == '__main__':
 	elif args.tracker == "kalmansort":
 		tracker = TrackingKalmanSort(gt_ids, annotations, args.iou_th)
 
+	if args.input == "gt":
+		detections = annotations
+	elif args.input == "retinanet101":
+		detections = uw3.read_detections('../data/detections/retinanet_R_50_FPN_3x/detections.txt');
 
-	for i in range(0, TOTAL_FRAMES):
+	for i in range(228, TOTAL_FRAMES):
 		frameId = i + 1;
 		print("Frame %04d of %04d" % (frameId, TOTAL_FRAMES));
 		img = cv2.imread("../data/images/%04d.jpeg" % frameId);
-		bboxes = annotations[i]
+		bboxes = detections[i]
 
 		tracks = tracker.generate_track(i, bboxes)
 		if len(tracks) > 0:
@@ -45,6 +52,7 @@ if __name__ == '__main__':
 
 		# Show
 		cv2.imshow('Video', cv2.resize(img, (1920//2, 1080//2)))
+		#cv2.waitKey(0)
 		if cv2.waitKey(10) & 0xFF == ord('q'):
 			cv2.destroyAllWindows()
 			break
