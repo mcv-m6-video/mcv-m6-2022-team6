@@ -14,11 +14,6 @@ if __name__ == '__main__':
 	parser.add_argument('--mode', default='backward')
 	args = parser.parse_args()
 
-	if args.mode == "forward":
-		start = 0;
-	elif args.mode == "backward":
-		start = 1;
-
 	img1 = cv2.imread("../data/results_opticalflow_kitti/original/000045_10.png")
 	img2 = cv2.imread("../data/results_opticalflow_kitti/original/000045_11.png")
 	F_gt = flow_read("../data/results_opticalflow_kitti/groundtruth/000045_10.png")
@@ -28,7 +23,7 @@ if __name__ == '__main__':
 	#F_gt = flow_read("../data/results_opticalflow_kitti/groundtruth/000157_10.png")
 
 	start_time = time.time()
-	result = get_optical_flow(img1, img2);
+	result = get_optical_flow(img1, img2, mode=args.mode, method="log", show_preview=False);
 	print("--- %s seconds ---" % (time.time() - start_time))
 
 	MSEN = msen(F_gt, result)

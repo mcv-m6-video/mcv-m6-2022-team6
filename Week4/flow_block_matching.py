@@ -38,8 +38,8 @@ def exhaustive_search_own(template: np.ndarray, target: np.ndarray, block_size):
 	return np.unravel_index(errors.argmin(), errors.shape);
 
 
-def logarithmic_search(template: np.ndarray, target: np.ndarray, metric: str = 'cv2.TM_SQDIFF_NORMED'):
-	step = 2
+def logarithmic_search(template: np.ndarray, target: np.ndarray, step=4):
+
 	orig = ((target.shape[0] - template.shape[0]) // 2, (target.shape[1] - template.shape[1]) // 2)
 	step = (min(step, orig[0]), min(step, orig[1]))
 	while step[0] > 1 and step[1] > 1:
@@ -60,7 +60,8 @@ def logarithmic_search(template: np.ndarray, target: np.ndarray, metric: str = '
 	return orig
 
 
-def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=16, area=4, mode="forward"):
+def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=31, area=40, mode="forward",
+					 method="log", show_preview=False, log_step = 4):
 
 	if mode == "backward":
 		img1, img2 = img2, img1
@@ -78,21 +79,24 @@ def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=16, area=4, 
 			patch = img1[top_l[1]:bot_r[1], top_l[0]:bot_r[0]];
 			search_patch = img2[top_l_search[1]:bot_r_search[1], top_l_search[0]:bot_r_search[0]]
 
-			#displacement  = exhaustive_search_cv2(patch, search_patch)
-			displacement = logarithmic_search(patch, search_patch)
-			#displacement = exhaustive_search_own(patch, search_patch, block_size)
+			if method == "cv2":
+				displacement  = exhaustive_search_cv2(patch, search_patch)
+			elif method == "log":
+				displacement = logarithmic_search(patch, search_patch, step=log_step)
+			elif method == "full":
+				displacement = exhaustive_search_own(patch, search_patch, block_size)
 
 			v_flow = int(displacement[1]) - (ih - top_l[1])
 			u_flow = int(displacement[0]) - (iw - top_l[0])
 			flow[ih:ih + block_size, iw:iw + block_size] = [u_flow, v_flow]
 
-			if False:
+			if show_preview:
 				preview = img1.copy()
 				preview = cv2.rectangle(preview, top_l_search, bot_r_search, (255, 0, 0));
 				preview = cv2.rectangle(preview, top_l, bot_r, (0, 0, 255));
 				preview = cv2.drawMarker(preview, (u_flow + top_l[0], v_flow + top_l[1]), (0, 255, 0))
 				cv2.imshow("Preview", preview)
-				cv2.waitKey(1);
+				cv2.waitKey(0);
 
 	flow = np.dstack((flow[:, :, 0], flow[:, :, 1], np.ones_like(flow[:, :, 0])))
 	return flow
