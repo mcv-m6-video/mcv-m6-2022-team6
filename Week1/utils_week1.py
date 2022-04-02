@@ -229,8 +229,8 @@ def msen(Frame_gt, Frame_test):
     '''
     SEN = []
 
-    Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
-
+    #Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
+    Module = mth.minSquare(Frame_gt[:,:,0], Frame_test[:,:,0], Frame_gt[:,:,1], Frame_test[:,:,1])
     F_valid_gt = Frame_gt[:, :, 2]
 
     Module[F_valid_gt == 0] = 0  # 0s in ocluded pixels
@@ -259,8 +259,8 @@ def msen(Frame_gt, Frame_test):
 def pepn(Frame_gt, Frame_test, th):
     MSEN = []
 
-    Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
-
+    #Module = np.sqrt(np.add(np.square(np.subtract(Frame_gt[:,:,0],Frame_test[:,:,0])),np.square(np.subtract(Frame_gt[:,:,1],Frame_test[:,:,1]))))
+    Module = mth.minSquare(Frame_gt[:,:,0], Frame_test[:,:,0], Frame_gt[:,:,1], Frame_test[:,:,1])
     F_valid_gt = Frame_gt[:, :, 2]
 
     Module[F_valid_gt == 0] = 0  # 0s in ocluded pixels
@@ -292,9 +292,6 @@ def plotFlow(flow, img_path):
 	Q = ax1.quiver(X[::sampling,::sampling], Y[::sampling,::sampling], U[::sampling,::sampling], V[::sampling,::sampling],
                 units='xy', angles='xy', scale = max_vector_length*0.2/sampling, color = "red")
 	
-
-	#Q = ax1.quiver(X[::sampling,::sampling], Y[::sampling,::sampling], U[::sampling,::sampling], V[::sampling,::sampling],
-    #            units='xy', angles='xy')
 	plt.gca().invert_yaxis()
 	qk = ax1.quiverkey(Q, 0.9, 0.9, 1, r'$1 \frac{p}{f}$', labelpos='E',
                    coordinates='figure')
