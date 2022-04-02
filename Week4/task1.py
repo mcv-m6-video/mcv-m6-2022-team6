@@ -23,7 +23,7 @@ if __name__ == '__main__':
 	#F_gt = flow_read("../data/results_opticalflow_kitti/groundtruth/000157_10.png")
 
 	start_time = time.time()
-	result = get_optical_flow(img1, img2, mode=args.mode, method="log", show_preview=False);
+	result = get_optical_flow(img1, img2, mode=args.mode, method="cv2", show_preview=True);
 	print("--- %s seconds ---" % (time.time() - start_time))
 
 	MSEN = msen(F_gt, result)

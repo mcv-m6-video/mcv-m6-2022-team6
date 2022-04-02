@@ -5,7 +5,7 @@ METRICS = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
 		   'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
 
 
-def exhaustive_search_cv2(template: np.ndarray, target: np.ndarray, metric='cv2.TM_CCORR_NORMED'):
+def exhaustive_search_cv2(template: np.ndarray, target: np.ndarray, metric='cv2.TM_CCOEFF_NORMED'):
 	"""
 	search at all possible positions in target
 	"""
@@ -60,7 +60,7 @@ def logarithmic_search(template: np.ndarray, target: np.ndarray, step=4):
 	return orig
 
 
-def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=31, area=40, mode="forward",
+def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=32, area=32, mode="forward",
 					 method="log", show_preview=False, log_step = 4):
 
 	if mode == "backward":
@@ -94,7 +94,9 @@ def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=31, area=40,
 				preview = img1.copy()
 				preview = cv2.rectangle(preview, top_l_search, bot_r_search, (255, 0, 0));
 				preview = cv2.rectangle(preview, top_l, bot_r, (0, 0, 255));
-				preview = cv2.drawMarker(preview, (u_flow + top_l[0], v_flow + top_l[1]), (0, 255, 0))
+				preview = cv2.rectangle(preview, (u_flow + top_l[0], v_flow + top_l[1]),
+										(u_flow + top_l[0] + block_size, v_flow + top_l[1] + block_size), (0, 255, 0));
+				#preview = cv2.drawMarker(preview, (u_flow + top_l[0], v_flow + top_l[1]), (0, 255, 0))
 				cv2.imshow("Preview", preview)
 				cv2.waitKey(0);
 
