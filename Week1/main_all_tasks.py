@@ -93,7 +93,7 @@ def task103():
 
 def task104():
 	F_gt = ut.flow_read("data/results_opticalflow_kitti/groundtruth/000045_10.png")
-	img_path = "data/results_opticalflow_kitti/original/000045_10.png"
+	img_path = "data/results_opticalflow_kitti/original_black/000045_10.png"
 	ut.plotFlow(F_gt, img_path)
 
 
