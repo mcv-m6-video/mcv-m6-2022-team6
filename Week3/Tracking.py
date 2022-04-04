@@ -1,8 +1,8 @@
 import abc
 import copy
 
-import utils_week1 as uw1
-from sort import *
+from . import Sort, utils_week1 as uw1
+import numpy as np
 import motmetrics as mm
 
 
