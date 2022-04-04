@@ -3,22 +3,11 @@ import numpy as np
 
 from Week3 import utils_week3 as uw3
 from Week3.Tracking import TrackingIOU, TrackingKalman, TrackingKalmanSort, TrackingIOUDirection
-import cv2
-from lib import pyflow
 import imageio
 import cv2
 
 annotations_path = '../data/ai_challenge_s03_c010-full_annotation.xml'
 TOTAL_FRAMES = 2141
-
-# Flow Options:
-alpha = 0.1
-ratio = 0.75
-minWidth = 20
-nOuterFPIterations = 2
-nInnerFPIterations = 1
-nSORIterations = 2
-colType = 0  # 0 or default:RGB, 1:GRAY (but pass gray image with shape (h,w,1))
 
 
 def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
@@ -26,14 +15,15 @@ def draw_bbox(img, bbox, id=1, color=(0, 0, 255)):
 	img = cv2.putText(img, "Id %d" % id, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 3)
 	return cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 3)
 
+
 def to_flow_view(img, flow):
-	hsv = np.zeros(img.shape, dtype=np.uint8)
-	hsv[:, :, 0] = 255
-	hsv[:, :, 1] = 255
 	mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+	hsv = np.zeros_like(img)
+	hsv[..., 1] = 255
 	hsv[..., 0] = ang * 180 / np.pi / 2
 	hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
 	return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Car tracking")
@@ -76,19 +66,13 @@ if __name__ == '__main__':
 			print("Frame %04d of %04d" % (frameId, TOTAL_FRAMES))
 
 		img = cv2.imread("../data/images/%04d.jpeg" % frameId)
+		img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
 		bboxes = detections[i]
 
-		if not prev_frame is None:
-			u, v, im2W = pyflow.coarse2fine_flow(prev_frame/255.,
-												img/255.,
-												 alpha, ratio, minWidth, nOuterFPIterations,
-												 nInnerFPIterations,
-												 nSORIterations, colType)
-			flow = np.concatenate((u[..., None], v[..., None]), axis=2)
-			img_flow = to_flow_view(img, flow)
+		flow = cv2.calcOpticalFlowFarneback(prev_frame, img_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
 		tracks = tracker.generate_track(i, bboxes)
-		prev_frame = cv2.cvtColor(img.copy(), cv2.COLOR_BGRA2GRAY);
+		prev_frame = img_gray.copy()
 		if args.preview:
 			if len(tracks) > 0:
 				for track in tracks:
@@ -96,7 +80,7 @@ if __name__ == '__main__':
 
 			# Show
 			# writer.append_data(cv2.cvtColor(cv2.resize(img, (1920//2, 1080//2)), cv2.COLOR_BGR2RGB))
-			cv2.imshow('Video', cv2.resize(img_flow, (1920 // 2, 1080 // 2)))
+			cv2.imshow('Video', cv2.resize(to_flow_view(img, flow), (1920 // 2, 1080 // 2)))
 			if cv2.waitKey(10) & 0xFF == ord('q'):
 				cv2.destroyAllWindows()
 				break
