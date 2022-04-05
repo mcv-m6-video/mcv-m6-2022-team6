@@ -1,7 +1,8 @@
 import copy
 
 import numpy as np
-
+import sys
+sys.path.append('/home/marcelo/Documents/Master_CV/M6/mcv-m6-2022-team6')
 from Week3 import get_rect_iou
 from Week3.Tracking import TrackingBase
 import cv2
@@ -92,17 +93,18 @@ class TrackingOF(TrackingBase):
 	def find_best_iou_of(self, bbox, tracks, ids_selected, flow):
 
 		best_track = None
-		best_tack_iou = 9999
+		best_tack_iou = 0
 
 		for track in tracks:
 
-			if track['id'] in ids_selected:
-				continue
+			#if track['id'] in ids_selected:
+			#		continue
 
 			center = track['center']
 			distance = np.sqrt(np.sum(np.square(center - self.p0), axis=2));
 			near_points = distance < self.near_dis
-
+			#if np.sum(track['bbox'] - bbox) == 0:
+			#		best_track = track
 			if np.sum(near_points) > 0:
 				movement = flow[near_points.flatten(), :].mean(axis=0)
 
@@ -113,20 +115,20 @@ class TrackingOF(TrackingBase):
 
 				# Check if best
 				iou = get_rect_iou(bbox, bbox_of);
-				if 0.5 < iou < best_tack_iou:
+				if 0.5 < iou and best_tack_iou < iou:
 					best_track = track
 					best_tack_iou = iou
 
 		return best_track
 
-	def generate_track(self, frame, bboxes, img_gray):
+	def generate_track(self, frame_id, bboxes, img_gray):
 
 		new_frame = []
 		id_selected = []
 
 		if self.first_frame:
 			self.opticalLukasKanadeInit(img_gray)
-			new_frame = self.iou_tracking(frame, bboxes)
+			new_frame = self.iou_tracking(frame_id, bboxes)
 		else:
 			flow, p0, mask = self.opticalLukasKanade(img_gray)
 
@@ -137,7 +139,7 @@ class TrackingOF(TrackingBase):
 				if best_track is None:
 					assignedId = self.generate_id();
 					self._tracks[assignedId] = [];
-					newTrack = {"id": assignedId, "frame": frame, "bbox": bbox_norm,
+					newTrack = {"id": assignedId, "frame": frame_id, "bbox": bbox_norm,
 								"color": self._colours[(assignedId - 1) % 2000],
 								'center': (bbox_norm[0:2] + bbox_norm[2:4]) // 2}
 					self._tracks[assignedId].append(newTrack)
@@ -146,11 +148,11 @@ class TrackingOF(TrackingBase):
 					track_cpy = copy.deepcopy(best_track)
 					id_selected.append(track_cpy['id'])
 					track_cpy['bbox'] = bbox_norm
-					track_cpy['frame'] = frame
+					track_cpy['frame'] = frame_id
 					self._tracks[track_cpy['id']].append(track_cpy)
 					new_frame.append(track_cpy)
 
-		self.update_metrics(frame, self._last_frame)
+		self.update_metrics(frame_id, self._last_frame)
 		self._last_frame = new_frame
 
 		return new_frame, self.mask
