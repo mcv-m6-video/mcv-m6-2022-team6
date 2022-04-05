@@ -24,7 +24,7 @@ class TrackingOF(TrackingBase):
 	p0 = None
 	good_new = []
 	good_old = []
-	near_dis = 500
+	near_dis = 100
 
 	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
 		super().__init__(gt_ids, gt_bbox, iou_th)
@@ -54,7 +54,7 @@ class TrackingOF(TrackingBase):
 		self.p0 = self.good_new.reshape(-1, 1, 2)
 		flow = (self.good_new - self.good_old);
 
-		return flow, self.p0, self.mask
+		return np.ceil(flow), self.p0, self.mask
 
 	def drawLukasKanade(self, img):
 
@@ -89,6 +89,36 @@ class TrackingOF(TrackingBase):
 
 		return new_frame
 
+	def find_best_iou_of(self, bbox, tracks, ids_selected, flow):
+
+		best_track = None
+		best_tack_iou = 9999
+
+		for track in tracks:
+
+			if track['id'] in ids_selected:
+				continue
+
+			center = track['center']
+			distance = np.sqrt(np.sum(np.square(center - self.p0), axis=2));
+			near_points = distance < self.near_dis
+
+			if np.sum(near_points) > 0:
+				movement = flow[near_points.flatten(), :].mean(axis=0)
+
+				# Generate temp bbox (move in flow direction)
+				bbox_of = track['bbox'].copy()
+				bbox_of[0:2] = bbox_of[0:2] + movement
+				bbox_of[2:4] = bbox_of[2:4] + movement
+
+				# Check if best
+				iou = get_rect_iou(bbox, bbox_of);
+				if 0.5 < iou < best_tack_iou:
+					best_track = track
+					best_tack_iou = iou
+
+		return best_track
+
 	def generate_track(self, frame, bboxes, img_gray):
 
 		new_frame = []
@@ -102,30 +132,7 @@ class TrackingOF(TrackingBase):
 
 			for bbox in bboxes:
 				bbox_norm = bbox.astype(np.int32)[0:4];
-				best_track = None
-				best_tack_iou = 9999
-
-				for track in self._last_frame:
-
-					if track['id'] in id_selected:
-						continue
-
-					center = track['center']
-					near_points = np.sqrt(np.sum(np.square(center - p0), axis=2)) < self.near_dis
-
-					if np.sum(near_points) > 0:
-						movement = flow[near_points.flatten(), :].mean(axis=0)
-
-						# Generate temp bbox (move in flow direction)
-						bbox_of = track['bbox'].copy()
-						bbox_of[0:2] = bbox_of[0:2] + movement
-						bbox_of[2:4] = bbox_of[2:4] + movement
-
-						# Check if best
-						iou = get_rect_iou(bbox_norm, bbox_of);
-						if 0.5 < iou < best_tack_iou:
-							best_track = track
-							best_tack_iou = iou
+				best_track = self.find_best_iou_of(bbox_norm, self._last_frame, id_selected, flow)
 
 				if best_track is None:
 					assignedId = self.generate_id();
@@ -140,7 +147,7 @@ class TrackingOF(TrackingBase):
 					id_selected.append(track_cpy['id'])
 					track_cpy['bbox'] = bbox_norm
 					track_cpy['frame'] = frame
-					self._tracks[track['id']].append(track_cpy)
+					self._tracks[track_cpy['id']].append(track_cpy)
 					new_frame.append(track_cpy)
 
 		self.update_metrics(frame, self._last_frame)
