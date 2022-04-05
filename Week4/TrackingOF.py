@@ -24,7 +24,7 @@ class TrackingOF(TrackingBase):
 	p0 = None
 	good_new = []
 	good_old = []
-	near_dis = 100
+	near_dis = 500
 
 	def __init__(self, gt_ids, gt_bbox, iou_th=0.5):
 		super().__init__(gt_ids, gt_bbox, iou_th)
@@ -46,10 +46,10 @@ class TrackingOF(TrackingBase):
 			self.good_old = self.p0[st == 1]
 
 		# draw the tracks
-		"""for i, (new, old) in enumerate(zip(self.good_new, self.good_old)):
+		for i, (new, old) in enumerate(zip(self.good_new, self.good_old)):
 			a, b = new.ravel()
 			c, d = old.ravel()
-			self.mask = cv2.line(self.mask, (int(a), int(b)), (int(c), int(d)), self._colours[i].tolist(), 2)"""
+			self.mask = cv2.line(self.mask, (int(a), int(b)), (int(c), int(d)), self._colours[i].tolist(), 2)
 
 		self.p0 = self.good_new.reshape(-1, 1, 2)
 		flow = (self.good_new - self.good_old);
@@ -87,9 +87,6 @@ class TrackingOF(TrackingBase):
 				self._tracks[assignedId].append(newTrack)
 				new_frame.append(newTrack);
 
-		self.update_metrics(frame, self._last_frame)
-		self._last_frame = new_frame;
-
 		return new_frame
 
 	def generate_track(self, frame, bboxes, img_gray):
@@ -99,7 +96,7 @@ class TrackingOF(TrackingBase):
 
 		if self.first_frame:
 			self.opticalLukasKanadeInit(img_gray)
-			return self.iou_tracking(frame, bboxes), self.mask
+			new_frame = self.iou_tracking(frame, bboxes)
 		else:
 			flow, p0, mask = self.opticalLukasKanade(img_gray)
 
@@ -126,7 +123,7 @@ class TrackingOF(TrackingBase):
 
 						# Check if best
 						iou = get_rect_iou(bbox_norm, bbox_of);
-						if iou > 0.5 and iou > best_tack_iou:
+						if 0.5 < iou < best_tack_iou:
 							best_track = track
 							best_tack_iou = iou
 
@@ -145,5 +142,8 @@ class TrackingOF(TrackingBase):
 					track_cpy['frame'] = frame
 					self._tracks[track['id']].append(track_cpy)
 					new_frame.append(track_cpy)
+
+		self.update_metrics(frame, self._last_frame)
+		self._last_frame = new_frame
 
 		return new_frame, self.mask
