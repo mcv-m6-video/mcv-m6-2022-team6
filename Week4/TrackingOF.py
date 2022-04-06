@@ -33,7 +33,7 @@ class TrackingOF(TrackingBase):
 	def opticalLukasKanadeInit(self, img_gray):
 		self.prev_frame = img_gray
 		self.p0 = cv2.goodFeaturesToTrack(self.prev_frame, mask=None, **feature_params)
-		self.mask = np.zeros_like(img_gray)
+		self.mask = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
 		self.first_frame = False
 
 	def opticalLukasKanade(self, img_gray):
