@@ -21,14 +21,15 @@ This task is divided in 3 steps
 
 To track the cars of a video sequence and evaluate the tracking (IDF1), run:
 
+```bash
 python W4/task_2.py -h
 
->usage: task_2.py [-h] [--track_method {overlap,kalman}]
-                      [--det_method {retina,mask,ssd,yolo}]
-                      [--det_dir DET_DIR] [--data_path DATA_PATH]
-                      [--seqs SEQS] [--show_boxes] [--save_filtered]
+usage: task_2.py.py [-h] [--track_method {overlap,kalman}]
+                        [--det_method {retina,mask,ssd,yolo}]
+                        [--det_dir DET_DIR] [--data_path DATA_PATH]
+                        [--seqs SEQS] [--show_boxes] [--save_filtered]
 
->optional arguments:
+optional arguments:
   -h, --help            show this help message and exit
   --track_method {overlap,kalman}
                         method used to track cars
@@ -40,3 +41,5 @@ python W4/task_2.py -h
   --seqs SEQS           sequence/camera from AICity dataset
   --show_boxes          show bounding boxes
   --save_filtered       save filtered detections (without parked cars)
+
+```
