@@ -13,15 +13,17 @@ def exhaustive_search_cv2(template: np.ndarray, target: np.ndarray, metric='cv2.
 	metric = eval(metric)
 	result = cv2.matchTemplate(target, template, metric)
 	min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-	cv2.imshow("target",target)
-	cv2.imshow("sqare",template)
-	cv2.imshow("result",result)
+	if debugging:
+		cv2.imshow("target",target)
+		cv2.imshow("sqare",template)
+		cv2.imshow("result",result)
 
 	if metric in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
 		pos = min_loc
 	else:
 		pos = max_loc
 	return pos
+
 
 
 def exhaustive_search_own(template: np.ndarray, target: np.ndarray, block_size, metric="SSD"):
@@ -90,6 +92,12 @@ def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=32, area=32,
 
 			if method == "cv2":
 				displacement  = exhaustive_search_cv2(patch, search_patch)
+			elif method == "cv2CCOEFF":
+				displacement  = exhaustive_search_cv2(patch, search_patch, metric= 'cv2.TM_CCOEFF_NORMED')
+			elif method == "cv2CCORR":
+				displacement  = exhaustive_search_cv2(patch, search_patch, metric= 'cv2.TM_CCORR_NORMED')
+			elif method == "cv2SQDIFF":
+				displacement  = exhaustive_search_cv2(patch, search_patch, metric= 'cv2.TM_SQDIFF_NORMED')
 			elif method == "log":
 				displacement = logarithmic_search(patch, search_patch, step=log_step)
 			elif method == "full":
@@ -99,7 +107,7 @@ def get_optical_flow(img1: np.ndarray, img2: np.ndarray, block_size=32, area=32,
 			u_flow = int(displacement[0]) - (top_l[0]- top_l_search[0])
 			flow[ih:ih + block_size, iw:iw + block_size] = [u_flow, v_flow]
 
-			if show_preview:
+			if show_preview and debugging:
 				preview = img1.copy()
 				preview = cv2.rectangle(preview, top_l_search, bot_r_search, (255, 0, 0));
 				preview = cv2.rectangle(preview, top_l, bot_r, (0, 0, 255));
