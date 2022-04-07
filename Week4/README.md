@@ -40,3 +40,24 @@ optional arguments:
   --seqs SEQS           sequence/camera from AICity dataset
   --show_boxes          show bounding boxes
   --save_filtered       save filtered detections (without parked cars)
+
+
+python W5/task1/eval_tracking.py -h
+
+usage: eval_tracking.py [-h] [--track_method {overlap,kalman}]
+                        [--det_method {faster,mog,mask,ssd,yolo}]
+                        [--det_dir DET_DIR] [--data_path DATA_PATH]
+                        [--seqs SEQS] [--show_boxes] [--save_filtered]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --track_method {overlap,kalman}
+                        method used to track cars
+  --det_method {faster,mog,mask,ssd,yolo}
+                        load detections obtained with this method
+  --det_dir DET_DIR     path from where to load detections
+  --data_path DATA_PATH
+                        path to sequences of AICity
+  --seqs SEQS           sequence/camera from AICity dataset
+  --show_boxes          show bounding boxes
+  --save_filtered       save filtered detections (without parked cars)
