@@ -22,7 +22,7 @@ This task is divided in 3 steps
 To track the cars of a video sequence and evaluate the tracking (IDF1), run:
 
 ```bash
-python W4/task_2.py -h
+python Week4/task_2.py -h
 
 usage: task_2.py.py [-h] [--track_method {overlap,kalman}]
                         [--det_method {retina,mask,ssd,yolo}]
