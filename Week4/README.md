@@ -9,7 +9,7 @@ This task is divided in 3 steps
 
 * In order to visualize all this experiments run the command task4_1_1() passing as a first argument methods/area_block/steps to visualize this options for example
 
-> task4_1_1("methods")
+> python task4_1_1("methods")
 
 **Task 1.2** Off-the-shelt Optical Flow, on this task we implement the methods Horn Schunk, Farneback 2003 and Lucas-Kanade.
 
