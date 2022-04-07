@@ -16,6 +16,8 @@ This task is divided in 3 steps
 * In order to visualize this different methods run the command task4_1_2() passing as the first argument Shunk (for Horn Schunk), Farneback or Kanade (for Lucas-Kanade)
 
 ### Task 2 Multi-target single camera tracking
+
+**Task 2/2.1**
 * Applying the best method  on all the cameras from Sequence S01, S03, and S04 of the AI City Challenge Track 1
 * Report best results for each camera.
 
