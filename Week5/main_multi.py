@@ -14,6 +14,7 @@ if __name__ == '__main__':
 	parser.add_argument('--cams', default=['c010', 'c011'])
 	parser.add_argument('--start_cam', default='c010')
 	parser.add_argument('--det', default='mask_rcnn')
+	parser.add_argument('--preview', default=True)
 	args = parser.parse_args()
 
 	cameras, max_frame = get_cameras_info(args.seq, args.cams)
@@ -31,10 +32,15 @@ if __name__ == '__main__':
 			# Load frame
 			frame = read_frame(args.seq, i, cam)
 
+			# Get detections
 			detec = []
 			if frameId > 0:
 				detec = detections[cam['Name']][frameId - 1]
 
-			plot_camera(cam['Name'], frame, detec)
+			# Process tracking
+
+			# Plot cameras
+			if bool(args.preview):
+				plot_camera(cam['Name'], frame, detec)
 
 		cv2.waitKey(10)
