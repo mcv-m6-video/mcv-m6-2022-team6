@@ -19,7 +19,7 @@ def read_frame(sequence, frameId, camera):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Multicamera Tracking")
-	parser.add_argument('--seq', default='S01')
+	parser.add_argument('--seq', default='S03')
 	parser.add_argument('--cams', default=['c003', 'c004'])
 	parser.add_argument('--start_cam', default='c001')
 	args = parser.parse_args()

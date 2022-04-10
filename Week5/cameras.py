@@ -3,10 +3,12 @@ import numpy as np
 
 FPS = 10.0
 
+
 def get_frame_id(frame, timestamp):
 	real_frame = int(frame - np.around(timestamp * FPS))
 	print("Frame: %04d Real: %04d" % (frame, real_frame))
 	return real_frame
+
 
 def get_max_frame(cameras):
 	last_camera = cameras['Time'].argmax()
