@@ -1,38 +1,40 @@
 import argparse
 
-import numpy as np
-
 import cv2
 
-from Week5.cameras import get_frame_id, get_cameras_info
-
-
-def read_frame(sequence, frameId, camera):
-	real_frame_id = get_frame_id(frameId, camera['Time'])
-	if real_frame_id <= 0:
-		return np.zeros((1920, 1080, 3))
-
-	print("Camera %s" % camera['Cam'])
-	return cv2.imread("dataset/train/%s/%s/img/%04d.jpeg"
-					  % (sequence, camera['Cam'], real_frame_id))
-
+from utils import read_frame
+from tracking import TrackingKalmanSort
+from detections import load_detections, load_gt
+from cameras import get_cameras_info, get_frame_id
+from plot import plot_camera
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Multicamera Tracking")
 	parser.add_argument('--seq', default='S03')
-	parser.add_argument('--cams', default=['c003', 'c004'])
-	parser.add_argument('--start_cam', default='c001')
+	parser.add_argument('--cams', default=['c010', 'c011'])
+	parser.add_argument('--start_cam', default='c010')
+	parser.add_argument('--det', default='mask_rcnn')
 	args = parser.parse_args()
 
 	cameras, max_frame = get_cameras_info(args.seq, args.cams)
-	preview_size = (1920 // 3, 1080 // 3)
+	detections = load_detections(args.seq, cameras, args.det)
+	gt = load_gt(args.seq, cameras)
+	#tracker = TrackingKalmanSort()
 
 	for i in range(1, max_frame):
-		print("Frame %d" % i)
-		img = read_frame(args.seq, i, cameras.iloc[0])
-		img2 = read_frame(args.seq, i, cameras.iloc[1])
 
-		cv2.imshow('Cam01', cv2.resize(img, preview_size))
-		cv2.imshow('Cam02', cv2.resize(img2, preview_size))
+		for cam_i in cameras.index:
+			# Camera data
+			cam = cameras.iloc[cam_i]
+			frameId = get_frame_id(i, cam['Time'])
 
-		cv2.waitKey(0)
+			# Load frame
+			frame = read_frame(args.seq, i, cam)
+
+			detec = []
+			if frameId > 0:
+				detec = detections[cam['Name']][frameId - 1]
+
+			plot_camera(cam['Name'], frame, detec)
+
+		cv2.waitKey(10)
