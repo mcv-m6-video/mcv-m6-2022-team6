@@ -43,15 +43,15 @@ def create_csv_patches(video_path, gt_path, patches_path, sequence, camera, writ
 
 if __name__ == "__main__":
     
-    sequences = ['S03','S04','S01']
     with open('Week5/gt/gt_car_patches_annotations.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(
             ["FILENAME", "ID"])  
         
-        for seq in sequences:
+        patches_path =  os.path.join('Week5/gt/gt_car_patches/')
+        for seq in ['S03','S04','S01']:
             videos_path = os.path.join('data/AICity_data/train', seq)
-            patches_path =  os.path.join('Week5/gt/gt_car_patches', seq)
+            
             os.makedirs(patches_path, exist_ok=True)
             
             for camera in sorted(mylistdir(videos_path)):
