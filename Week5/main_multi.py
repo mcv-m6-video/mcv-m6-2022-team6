@@ -1,12 +1,21 @@
 import argparse
 
 import cv2
+import numpy as np
 
 from utils import read_frame
 from tracking import TrackingKalmanSort
 from detections import load_detections, load_gt
 from cameras import get_cameras_info, get_frame_id
 from plot import plot_camera
+
+# Seq03
+"""adj_mat = np.array([[0, 1, 1, 1, 1, 1],
+                    [1, 0, 1, 1, 1, 1],
+                    [1, 1, 0, 1, 1, 1],
+                    [1, 1, 1, 0, 1, 1],
+                    [1, 1, 1, 1, 0, 1],
+                    [1, 1, 1, 1, 1, 0]])"""
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Multicamera Tracking")
@@ -20,7 +29,10 @@ if __name__ == '__main__':
 	cameras, max_frame = get_cameras_info(args.seq, args.cams)
 	detections = load_detections(args.seq, cameras, args.det)
 	gt = load_gt(args.seq, cameras)
-	#tracker = TrackingKalmanSort()
+
+	# Init trackers
+	for cam_i in cameras.index:
+		tracker = TrackingKalmanSort();
 
 	for i in range(1, max_frame):
 
