@@ -272,7 +272,6 @@ if __name__ == "__main__":
             save_detections(det_filtered, save_path)
             print('Filtered detections saved in ', save_path)
 
-        # root_path = '/home/oscar/workspace/master/modules/m6/project/mcv-m6-2021-team4/W5/task1_1/detections/faster'
-        # det_filtered = read_detections(os.path.join(root_path, seq, 'overlap_filtered_detections.txt'), grouped=True)
+        
 
         eval_tracking(params, det_filtered)
