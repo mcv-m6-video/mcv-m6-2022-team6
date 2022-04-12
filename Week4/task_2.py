@@ -243,7 +243,7 @@ def parse_args(args=sys.argv[1:]):
     parser.add_argument('--show_boxes', action='store_true',
                         help='show bounding boxes')
 
-    parser.add_argument('--save_filtered', default=True,
+    parser.add_argument('--save_filtered', action='store_true',
                         help='save filtered detections (without parked cars)')
 
     return parser.parse_args(args)
