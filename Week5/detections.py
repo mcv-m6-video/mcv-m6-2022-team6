@@ -25,6 +25,21 @@ def read_detections(file_name, nframes, iou_th=0.5):
 
 	return gt_ids, annotations
 
+def read_detections_withid(file_name, iou_th=0.5):
+	output = {}
+	detections = pd.read_csv(file_name, delimiter=",", header=None).to_numpy()
+	for detection in detections:
+		frameId = int(detection[0]) - 1
+		if not frameId in output:
+			output[frameId] = []
+
+		if detection[6] >= iou_th:
+			bbox = np.hstack((detection[2:4], detection[2:4] + detection[4:6], detection[6]))
+			id = int(detection[1])
+			output[frameId].append({'bbox': bbox, 'id': id})
+
+	return output
+
 
 def load_detections(seq, cameras, det):
 	detections = {}
