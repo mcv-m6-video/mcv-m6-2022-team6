@@ -51,7 +51,7 @@ def group_by_frame(boxes):
         grouped[box['frame']].append(box)
     return OrderedDict(sorted(grouped.items()))
     
-#writer = imageio.get_writer("Week4/tracking.gif", mode="I", fps=10) #gift
+#writer = imageio.get_writer("Week4/tracking2.gif", mode="I", fps=30) #gift
 def filter_detections_parked(params, mse_thr=300, var_thr=50):
     print("[INFO] Filtering detections to remove parked cars")
 
@@ -115,7 +115,7 @@ def filter_detections_parked(params, mse_thr=300, var_thr=50):
                 list_positions[object_bb['id']] = [[int(x) for x in center]]
                 list_positions_bboxes[object_bb['id']] = [object_bb]
 
-        # To detect pared cars
+        # To detect parked cars
         for bbox in id_seen:
             center1=[(bbox['bbox'][0] + bbox['bbox'][2]) // 2, (bbox['bbox'][1] + bbox['bbox'][3]) // 2]
             for idx in list(id_seen_last5frames.keys()):
@@ -140,6 +140,7 @@ def filter_detections_parked(params, mse_thr=300, var_thr=50):
                 cv2.destroyAllWindows()
             elif pressed_key == 27:
                 sys.exit()
+            cv2.resize(frame, (480,270))
             #writer.append_data(frame.astype(np.uint8))
         det_bboxes_old = det_bboxes
 
@@ -209,8 +210,9 @@ def save_detections(det, det_path):
     for frame_id, boxes in det.items():
         for box in boxes:
             # Format: <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x>, <y>, <z>
-            det = str(box.frame + 1) + ',' + str(box.id) + ',' + str(box.xtl) + ',' + str(box.ytl) + ',' + str(
-                box.width) + ',' + str(box.height) + ',' + str(1) + ',-1,-1,-1\n'
+            width = abs(box['bbox'][2] - box['bbox'][0])
+            height = abs(box['bbox'][3] - box['bbox'][1])
+            det = str(box['frame'] + 1) + ',' + str(box['id']) + ',' + str(box['bbox'][0]) + ',' + str(box['bbox'][1]) + ',' + str(width) + ',' + str(height) + ',' + str(1) + ',-1,-1,-1\n'
 
             with open(det_path, 'a+') as f:
                 f.write(det)
@@ -221,7 +223,7 @@ def save_detections(det, det_path):
 def parse_args(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--track_method', type=str, default='overlap',
+    parser.add_argument('--track_method', type=str, default='kalman',
                         choices=['overlap', 'kalman'],
                         help='method used to track cars')
 
@@ -238,10 +240,10 @@ def parse_args(args=sys.argv[1:]):
     parser.add_argument('--seqs', type=lambda s: [str(item) for item in s.split(',')], default=['S03/c010'],
                         help='sequence/camera from AICity dataset')
 
-    parser.add_argument('--show_boxes', default=True,
+    parser.add_argument('--show_boxes', action='store_true',
                         help='show bounding boxes')
 
-    parser.add_argument('--save_filtered', action='store_true',
+    parser.add_argument('--save_filtered', default=True,
                         help='save filtered detections (without parked cars)')
 
     return parser.parse_args(args)
@@ -272,6 +274,7 @@ if __name__ == "__main__":
             save_detections(det_filtered, save_path)
             print('Filtered detections saved in ', save_path)
 
-        
+        #root_path = 'data/detections/retina'
+        #det_filtered = read_detections2(os.path.join(root_path, seq, 'overlap_filtered_detections.txt'))
 
         eval_tracking(params, det_filtered)
