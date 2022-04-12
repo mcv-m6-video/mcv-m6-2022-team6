@@ -21,13 +21,13 @@ class Siamese(nn.Module):
 			nn.ReLU(),   # 256@6*6
 		)"""
 		self.conv = models.resnet18(pretrained=True);
-		self.liner = nn.Sequential(nn.Linear(9216, 4096), nn.Sigmoid())
-		self.out = nn.Linear(4096, 1)
+		#self.liner = nn.Sequential(nn.Linear(9216, 4096), nn.Sigmoid())
+		self.out = nn.Linear(1000, 1)
 
 	def forward_one(self, x):
 		x = self.conv(x)
 		x = x.view(x.size()[0], -1)
-		x = self.liner(x)
+		#x = self.liner(x)
 		return x
 
 	def forward(self, x1, x2):
