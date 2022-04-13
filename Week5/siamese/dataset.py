@@ -5,8 +5,11 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
-PATH = '../patches/images/'
+#Path for Colab
+PATH = 'patches/images'
 
+#Path Local
+#PATH = '../patches/images/'
 
 class CarDataset(Dataset):
 
