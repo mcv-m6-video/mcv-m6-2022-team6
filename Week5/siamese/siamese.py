@@ -8,36 +8,33 @@ class Siamese(nn.Module):
 	def __init__(self):
 		super(Siamese, self).__init__()
 		self.cnn1 = nn.Sequential(
-			nn.Conv2d(3, 96, kernel_size=11, stride=1),
+			nn.ReflectionPad2d(1),
+			nn.Conv2d(3, 4, kernel_size=3),
 			nn.ReLU(inplace=True),
-			nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75, k=2),
-			nn.MaxPool2d(3, stride=2),
+			nn.BatchNorm2d(4),
+			nn.Dropout2d(p=.2),
 
-			nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
+			nn.ReflectionPad2d(1),
+			nn.Conv2d(4, 8, kernel_size=3),
 			nn.ReLU(inplace=True),
-			nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75, k=2),
-			nn.MaxPool2d(3, stride=2),
-			nn.Dropout2d(p=0.3),
+			nn.BatchNorm2d(8),
+			nn.Dropout2d(p=.2),
 
-			nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
+			nn.ReflectionPad2d(1),
+			nn.Conv2d(8, 8, kernel_size=3),
 			nn.ReLU(inplace=True),
-
-			nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
-			nn.ReLU(inplace=True),
-			nn.MaxPool2d(3, stride=2),
-			nn.Dropout2d(p=0.3),
+			nn.BatchNorm2d(8),
+			nn.Dropout2d(p=.2),
 		)
 
-		# Defining the fully connected layers
 		self.fc1 = nn.Sequential(
-			nn.Linear(6400, 1024),
-			nn.ReLU(inplace=True),
-			nn.Dropout2d(p=0.5),
-
-			nn.Linear(1024, 128),
+			nn.Linear(8 * 100 * 100, 500),
 			nn.ReLU(inplace=True),
 
-			nn.Linear(128, 2)
+			nn.Linear(500, 500),
+			nn.ReLU(inplace=True),
+
+			nn.Linear(500, 5)
 		)
 
 	def forward_one(self, x):
