@@ -34,11 +34,11 @@ class CarDataset(Dataset):
 
 		# get image from same class
 		if index % 2 == 1:
-			label = 1.0
+			label = 0
 			data_else = data[(data.ID == data.iloc[idx1].ID) & (data.FILENAME != data.iloc[idx1].FILENAME)]
 		# get image from different class
 		else:
-			label = 0.0
+			label = 1
 			data_else = data[data.ID != data.iloc[idx1].ID]
 
 		idx2 = np.random.randint(0, data_else.shape[0])
