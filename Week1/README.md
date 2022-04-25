@@ -27,7 +27,9 @@
    Content 1
    Content 1 
    Content 1</p>
+</details>
 
+<details>
 <summary>Visual representation optical flow</summary>
  <p>Content 1 
   
