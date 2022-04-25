@@ -16,7 +16,7 @@ The focus of this module is to solve the problem of City-Scale Multi-Camera Vehi
 * [Week 2 Background Substraction](Week2/)
 * [Week 3 Object detection and tracking](Week3/)
 * [Week 4 Optical Flow and video stabilization](Week4/)
-* [Week 5 Multi-Target Multi-Ca,era Tracking](Week5/
+* [Week 5 Multi-Target Multi-Ca,era Tracking](Week5/)
 
 
 
