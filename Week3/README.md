@@ -31,7 +31,7 @@ This task is divided in 3 steps
 
 **Task 2.3** IDF1 score
 
-Implement IDF1 socre
+Implement IDF1 socre (ratio of correctly identified detection)
 
 To track the cars of a video sequence and evaluate the tracking (IDF1), run:
 
@@ -52,3 +52,6 @@ optional arguments:
   --preview             chose if show or not images
 
 ```
+
+## Results
+
