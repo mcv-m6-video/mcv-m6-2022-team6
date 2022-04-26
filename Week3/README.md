@@ -9,18 +9,20 @@ To train this code, is necessary run it with a computer with GPU or do it in a g
 
 ## Tasks
 ### Task 1 Object detection
-This task is divided in 2 steps
-Both task can be visualized with Task1_3.ipynb jupyter notebook.
-
-**Task 1.1** Off-the-shelf, for this task we were reqeusted to implment one or more object detection like Detectron2, Pytorch or Keras.
-
-* The implementation of this experiments are done in a jupyter notebook called TASK1_3.ipynb
+This task is divided in 3 steps
 
 
-**Task 1.2** Fine-tune, as previous weeks once method is implemented we must tune it to our data.
+
+**Task 1.1/1.2** Off-the-shelf/ Fine-tune, for this task we were reqeusted to implment one or more object detection like Detectron2, Pytorch or Keras. Also as previous weeks once the method is implemented we must fine tune it to our data.
+
+* Task 1.1 and 1.2 can be visualized with Task1_2.ipynb jupyter notebook.
+
+**Task 1.3** K-Fold Cross-validation, this task consist on repeat n times the training-test proces changing the testset and then picking the average to see a more realistic value of accuracy.
+To visualize this task run the jupyter notebook Task1_3.ipynb
 
 
-### Task 2 Multi-target single camera tracking
+### Task 2 Object tracking
+**Task 2.1** Tracking by Operlap
 
 **Task 2/2.1**
 * Applying the best method  on all the cameras from Sequence S01, S03, and S04 of the AI City Challenge Track 1
