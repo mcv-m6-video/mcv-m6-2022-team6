@@ -1,19 +1,24 @@
-# Week 4
+# Week 3
 ## Summary 
 
+The goal of this week is learn about using different Object Detection methods and fine tune it.
+
+### Requirements
+
+To train this code, is necessary run it with a computer with GPU or do it in a google colab.
+
 ## Tasks
-### Task 1 Optical Flow
-This task is divided in 3 steps
+### Task 1 Object detection
+This task is divided in 2 steps
+Both task can be visualized with Task1_3.ipynb jupyter notebook.
 
-**Task 1.1** Optical flow with Block Matching, here we implement an iterative method that match regions from the previous frame to the new one. That comparative is done using different methods and parameters.
+**Task 1.1** Off-the-shelf, for this task we were reqeusted to implment one or more object detection like Detectron2, Pytorch or Keras.
 
-* In order to visualize all this experiments run the command task4_1_1() passing as a first argument methods/area_block/steps to visualize this options for example
+* The implementation of this experiments are done in a jupyter notebook called TASK1_3.ipynb
 
-> python task4_1_1("methods")
 
-**Task 1.2** Off-the-shelt Optical Flow, on this task we implement the methods Horn Schunk, Farneback 2003 and Lucas-Kanade.
+**Task 1.2** Fine-tune, as previous weeks once method is implemented we must tune it to our data.
 
-* In order to visualize this different methods run the command task4_1_2() passing as the first argument Shunk (for Horn Schunk), Farneback or Kanade (for Lucas-Kanade)
 
 ### Task 2 Multi-target single camera tracking
 
