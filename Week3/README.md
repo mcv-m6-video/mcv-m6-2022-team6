@@ -53,5 +53,8 @@ optional arguments:
 
 ```
 
-## Results
+## Results.
 
+Once Detectrons are fine tuned we obsesrve this metrics where Retinanet_R_50_FPN_3x with a LR = 0.01, Batch = 256 we obtain an AP of 87.8 or AP50 of 98.075
+
+![plot](./results/3_1_2.png)
