@@ -58,3 +58,8 @@ optional arguments:
 Once Detectrons are fine tuned we obsesrve this metrics where Retinanet_R_50_FPN_3x with a LR = 0.01, Batch = 256 we obtain an AP of 87.8 or AP50 of 98.075
 
 ![plot](./results/3_1_2.png)
+
+Regarding task once tracking is implemented we can observe (first gif) how at any moment when 2 bounding boxes share space can swap the targets but once a method of angle direction is implemented this error is almost solved (second gif)
+
+![plot](./results/task21_overlap_cars.gif)
+![plot](./results/task22_overlap_cars.gif)
