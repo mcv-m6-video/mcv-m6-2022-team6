@@ -31,24 +31,19 @@ To visualize this task run the jupyter notebook Task1_3.ipynb
 To track the cars of a video sequence and evaluate the tracking (IDF1), run:
 
 ```bash
-python Week4/task_2.py -h
+python Week3/task_2.py -h
 
-usage: task_2.py.py [-h] [--track_method {overlap,kalman}]
-                        [--det_method {retina,mask,ssd,yolo}]
-                        [--det_dir DET_DIR] [--data_path DATA_PATH]
-                        [--seqs SEQS] [--show_boxes] [--save_filtered]
+usage: Task2.py.py [-h] [--iou_th]
+                        [--tracker {iou,iou_direction,kalman,kalmansort}]
+                        [--input {gt,retinanet50,faster50,retinanet101,faster101}] [--preview {True, False}]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --track_method {overlap,kalman}
+  --iou_th              set threshold for iou methods
+  --tracker {iou,iou_direction,kalman,kalmansort}
                         method used to track cars
-  --det_method {retina,mask,ssd,yolo}
+  --input {gt,retinanet50,faster50,retinanet101,faster101}
                         load detections obtained with this method
-  --det_dir DET_DIR     path from where to load detections
-  --data_path DATA_PATH
-                        path to sequences of AICity
-  --seqs SEQS           sequence/camera from AICity dataset
-  --show_boxes          show bounding boxes
-  --save_filtered       save filtered detections (without parked cars)
+  --preview             chose if show or not images
 
 ```
