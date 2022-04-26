@@ -18,15 +18,20 @@ This task is divided in 3 steps
 * Task 1.1 and 1.2 can be visualized with Task1_2.ipynb jupyter notebook.
 
 **Task 1.3** K-Fold Cross-validation, this task consist on repeat n times the training-test proces changing the testset and then picking the average to see a more realistic value of accuracy.
-To visualize this task run the jupyter notebook Task1_3.ipynb
+
+* To visualize this task run the jupyter notebook Task1_3.ipynb
 
 
 ### Task 2 Object tracking
 **Task 2.1** Tracking by Operlap
 
-**Task 2/2.1**
-* Applying the best method  on all the cameras from Sequence S01, S03, and S04 of the AI City Challenge Track 1
+**Task 2/2.1** Tracking by Overlap / Tracking with a Kalman Filter
+* Apply methods of object tracking on previous detection methods
 * Report best results for each camera.
+
+**Task 2.3** IDF1 score
+
+Implement IDF1 socre
 
 To track the cars of a video sequence and evaluate the tracking (IDF1), run:
 
