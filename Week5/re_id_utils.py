@@ -7,6 +7,43 @@ from pytorch_metric_learning.utils import common_functions
 
 from siamese_net import trans_test, MLP
 
+def load_siamese(trunk_path, embedder_path):
+    device = 'cpu'#torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Set trunk model and replace the softmax layer with an identity function
+    trunk = torchvision.models.resnet50(pretrained=True)
+    trunk_output_size = trunk.fc.in_features
+    trunk.fc = common_functions.Identity()
+    trunk = torch.nn.DataParallel(trunk.to(device))
+
+    # Set embedder model. This takes in the output of the trunk and outputs 256 dimensional embeddings
+    embedder = torch.nn.DataParallel(MLP([trunk_output_size, 256]).to(device))
+
+    if device == 'cpu':
+        trunk.load_state_dict(torch.load(trunk_path, map_location=torch.device('cpu')))
+    else:
+        trunk.load_state_dict(torch.load(trunk_path))
+    embedder.load_state_dict(torch.load(embedder_path, map_location=torch.device('cpu')))
+
+    return trunk, embedder
+
+
+def get_data(split, labels, patches_path):
+    df = labels[labels['FILENAME'].str.contains('S03')].sample(frac=1)
+    data = Detections(df, patches_path, trans_test)
+    loader = DataLoader(dataset=data, batch_size=32)
+    return data, loader
+
+    
+def get_id_cam(test_data, indices_cameras, cam):
+    indices_cam = indices_cameras[cam]  #frames idx for a particular camera
+    test_data_cam = [[i, test_data[i][1]] for i in indices_cam] #[[idx_cam, box_id], [idx_cam, box_id], ...] 
+    id_frames_cam = defaultdict(list)
+    for key, value in sorted(dict(test_data_cam).items()):
+        id_frames_cam[value].append(key)  #{box_id: [idx_cam, idx_cam ,..], box_id: [idx_cam, idx_cam, ..], ...}  idx_cam = frame (position of a given camera in test_data)
+
+    return id_frames_cam
+
 class Detections():
     def __init__(self, data, path, transform=trans_test):
         self.data = list(data.values[:, 0])
@@ -41,13 +78,6 @@ class Detections():
         return image, label, self.camera[index], stats, self.frame_id[index]
 
 
-def get_data_loader(split, labels, patches_path):
-    df = labels[labels['FILENAME'].str.contains('S03')].sample(frac=1)
-    data = Detections(df, patches_path, trans_test)
-    loader = DataLoader(dataset=data, batch_size=32)
-    return data, loader
-
-
 def find_matches(test_data, id_frames_c1, frame_c2,
                  inference_model, patches_to_compare_c1):
     idx2_matches = {}
@@ -64,34 +94,26 @@ def find_matches(test_data, id_frames_c1, frame_c2,
     return idx2_matches
 
 
-def merge_dicts(dict1, dict2):
-    for id, frames in dict2.items():
-      if id in dict1:
-        dict1[id].extend(frames)
-      else:
-        dict1[id] = frames
-    return dict1
 
-
-def compare_cams(test_data, id_frames_c1, id_frames_c2,
-                 inference_model, patches_to_compare_c1,
-                 patches_to_compare_c2):
+def comp_cams(test_data, id_frames_c1, id_frames_c2,
+                 infer_model, patches_comp_c1,
+                 patches_comp_c2):
     re_id_c2 = {}
 
     for id_c2, frames_c2 in id_frames_c2.items():
         idx2_matches = {}
-        repeated_matches = {}
-        num_frames_to_compare_c2 = min(patches_to_compare_c2, len(frames_c2))
-        for frame_c2 in random.sample(frames_c2, num_frames_to_compare_c2):
+        rep_matches = {}
+        num_frames_comp_c2 = min(patches_comp_c2, len(frames_c2))
+        for frame_c2 in random.sample(frames_c2, num_frames_comp_c2):
             idx2_matches_tmp = find_matches(test_data, id_frames_c1, frame_c2,
-                                    inference_model, patches_to_compare_c1)
+                                    infer_model, patches_comp_c1)
 
             for frame, id in idx2_matches_tmp.items():
                 if frame in idx2_matches:
-                    if id in repeated_matches:
-                        repeated_matches[id] += 1
+                    if id in rep_matches:
+                        rep_matches[id] += 1
                     else:
-                        repeated_matches[id] = 1
+                        rep_matches[id] = 1
                 else:
                     idx2_matches[frame] = id
 
@@ -101,7 +123,7 @@ def compare_cams(test_data, id_frames_c1, id_frames_c2,
 
         freq_ids = dict(Counter(idx2_matches.values()))
 
-        for i, c in repeated_matches.items():
+        for i, c in rep_matches.items():
             if i in freq_ids:
                 freq_ids[i] += c
 
@@ -115,15 +137,15 @@ def compare_cams(test_data, id_frames_c1, id_frames_c2,
 
     return re_id_c2
 
+def merge(dic1, dic2):
+    for id, frames in dic2.items():
+      if id in dic1:
+        dic1[id].extend(frames)
+      else:
+        dic1[id] = frames
+    return dic1
 
-def get_id_frames_cam(test_data, indices_cameras, cam):
-    indices_cam = indices_cameras[cam]
-    test_data_cam = [[i, test_data[i][1]] for i in indices_cam]
-    id_frames_cam = defaultdict(list)
-    for key, value in sorted(dict(test_data_cam).items()):
-        id_frames_cam[value].append(key)
 
-    return id_frames_cam
 
 
 def invert_dict(dict1):
@@ -134,22 +156,3 @@ def invert_dict(dict1):
   return new_dict
 
 
-def load_trunk_embedder(trunk_path, embedder_path):
-    device = 'cpu'#torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Set trunk model and replace the softmax layer with an identity function
-    trunk = torchvision.models.resnet18(pretrained=True)
-    trunk_output_size = trunk.fc.in_features
-    trunk.fc = common_functions.Identity()
-    trunk = torch.nn.DataParallel(trunk.to(device))
-
-    # Set embedder model. This takes in the output of the trunk and outputs 256 dimensional embeddings
-    embedder = torch.nn.DataParallel(MLP([trunk_output_size, 256]).to(device))
-
-    if device == 'cpu':
-        trunk.load_state_dict(torch.load(trunk_path, map_location=torch.device('cpu')))
-    else:
-        trunk.load_state_dict(torch.load(trunk_path))
-    embedder.load_state_dict(torch.load(embedder_path, map_location=torch.device('cpu')))
-
-    return trunk, embedder
