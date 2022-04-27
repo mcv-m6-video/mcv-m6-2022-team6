@@ -22,9 +22,9 @@ def parse_args(args=sys.argv[1:]):
                         help='path to embedder model')
     parser.add_argument('--thr', type=float, default=0.5,
                         help='threshold to consider a match')
-    parser.add_argument('--patches_to_compare_c1', type=int, default=4,
+    parser.add_argument('--patches_comp_c1', type=int, default=4,
                         help='number of patches to compare with cam1')
-    parser.add_argument('--patches_to_compare_c2', type=int, default=6,
+    parser.add_argument('--patches_comp_c2', type=int, default=6,
                         help='number of patches to compare with cam2')
     parser.add_argument('--show_reid', default=True,
                         help='show example of reid')
