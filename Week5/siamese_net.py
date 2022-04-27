@@ -1,116 +1,192 @@
-import torchvision
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader,Dataset
-import matplotlib.pyplot as plt
-import torchvision.utils
+import os
 import numpy as np
-import random
-from PIL import Image
+
+import matplotlib.pyplot as plt
+import matplotlib.image as pltImage
+
 import torch
-from torch.autograd import Variable
-import PIL.ImageOps    
 import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
 
 
+from torchvision import  transforms
 
-class SiameseNetwork(nn.Module):
-    def __init__(self):
-        super(SiameseNetwork, self).__init__()
+import umap
+import record_keeper
+from cycler import cycler
+import sys
 
-        #Outputs batch X 512 X 1 X 1 
-        self.net = nn.Sequential(
-            nn.Conv2d(3,32,kernel_size=3,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(32),
-            #nn.Dropout2d(p=0.4),
+import pytorch_metric_learning
+from pytorch_metric_learning import losses, miners, samplers, trainers, testers
+from pytorch_metric_learning.utils import common_functions
+import pytorch_metric_learning.utils.logging_presets as logging_presets
+from pytorch_metric_learning.utils.accuracy_calculator import AccuracyCalculator
 
-            nn.Conv2d(32,64,kernel_size=3,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(64),
-            #nn.Dropout2d(p=0.4),
-
-            nn.Conv2d(64,128,kernel_size=3,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(128),
-            #nn.Dropout2d(p=0.4),            
+import logging
+logging.getLogger().setLevel(logging.INFO)
+logging.info("VERSION %s"%pytorch_metric_learning.__version__)
 
 
-            nn.Conv2d(128,256,kernel_size=1,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(256),
-            #nn.Dropout2d(p=0.4),
+trans_train = transforms.Compose([
+                            transforms.ToPILImage(),
+                            transforms.Resize((128,128)),
+                            transforms.ToTensor(),
+                            transforms.RandomVerticalFlip(),
+                            transforms.RandomRotation((-10,10)),
+                        ])
 
-            nn.Conv2d(256,256,kernel_size=1,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(256),
-            #nn.Dropout2d(p=0.4),    
-
-            nn.Conv2d(256,512,kernel_size=3,stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(512),    
-
-            #1X1 filters to increase dimensions
-            nn.Conv2d(512,1024,kernel_size=1,stride=1),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(1024),    
-
-            )
+trans_test = transforms.Compose([
+                            transforms.ToPILImage(),
+                            transforms.Resize((128,128)),
+                            transforms.ToTensor(),
+                        ])
 
 
-    def forward_once(self, x):
-        output = self.net(x)
-        #output = output.view(output.size()[0], -1)
-        #output = self.fc(output)
+class CarsDataset(Dataset):
+    def __init__(self, data, path, transform=trans_train):
+        super().__init__()
+        self.data = list(data.values[:, 0])
+        self.targets = list(data.values[:, 1])
+        self.path = path
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        img_name = self.data[index]
+        label = self.targets[index]
+        img_path = os.path.join(self.path, (str(img_name)))
+        image = pltImage.imread(img_path)
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, label
+
+
+class MLP(nn.Module):
+    # layer_sizes[0] is the dimension of the input
+    # layer_sizes[-1] is the dimension of the output
+    def __init__(self, layer_sizes, final_relu=False):   
+        super().__init__()
+        layer_list = []
+        layer_sizes = [int(x) for x in layer_sizes]  #layer_size = [512,64]
+        num_layers = len(layer_sizes) - 1            #len(layer_size)= 2
+        final_relu_layer = num_layers if final_relu else num_layers - 1
+        for i in range(num_layers):
+            input_size = layer_sizes[i]     #input MLP
+            curr_size = layer_sizes[i + 1]  #output MLP
+            layer_list.append(nn.Linear(input_size, curr_size))
+            layer_list.append(nn.ReLU(inplace=False))
+            #if i < final_relu_layer:
+                #layer_list.append(nn.ReLU(inplace=False))
+            #layer_list.append(nn.Linear(input_size, curr_size))  #add a linear layer of (512,64) to empty list
+        self.net = nn.Sequential(*layer_list) #create a sequential network with one or more Linear layers
         
-        output = torch.squeeze(output)
-        return output
 
-    def forward(self, input1, input2,input3=None):
-        output1 = self.forward_once(input1)
-        output2 = self.forward_once(input2)
-
-        if input3 is not None:
-            output3 = self.forward_once(input3)
-            return output1,output2,output3
-
-        return output1, output2
+    def forward(self, x):
+        return self.net(x)
 
 
-
-class ContrastiveLoss(torch.nn.Module):
-    """
-    Contrastive loss function.
-    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-    """
-
-    def __init__(self, margin=2.0):
-        super(ContrastiveLoss, self).__init__()
-        self.margin = margin
-        self.eps = 1e-9
-
-    def forward(self, output1, output2, label):
-        euclidean_distance = F.pairwise_distance(output1, output2)
-        losses = 0.5 * (label.float() * euclidean_distance + (1 + (-1 * label) ).float() * F.relu(self.margin - (euclidean_distance + self.eps).sqrt()).pow(2))
-        loss_contrastive = torch.mean(losses)
-
-        return loss_contrastive
+def get_data_loader(split, labels, patches_path):
+    if split == 'train':
+        df = labels[labels['FILENAME'].str.contains('S01|S04')].sample(frac=1)
+        data = CarsDataset(df, patches_path, trans_train)
+        loader = DataLoader(dataset=data, batch_size=128, shuffle=True)
+    if split == 'test':
+        df = labels[labels['FILENAME'].str.contains('S03')].sample(frac=1)
+        data = CarsDataset(df, patches_path, trans_test)
+        loader = DataLoader(dataset=data, batch_size=128)
+    else:
+        print('need to be test or train. no other mode supported')
+        sys.exit(0)
+    return data, loader
 
 
-class TripletLoss(nn.Module):
-    """
-    Triplet loss
-    Takes embeddings of an anchor sample, a positive sample and a negative sample
-    """
+def train(train_data, test_data, save_model, num_epochs, lr, embedding_size, batch_size):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def __init__(self, margin):
-        super(TripletLoss, self).__init__()
-        self.margin = margin
+    # Set trunk model and replace the softmax layer with an identity function
+    trunk = torchvision.models.resnext50_32x4d(pretrained=True)
+    trunk_output_size = trunk.fc.in_features  #dim = 512
+    trunk.fc = common_functions.Identity()  #replace last fc
+    trunk = torch.nn.DataParallel(trunk.to(device))
 
-    def forward(self, anchor, positive, negative, size_average=True):
-        distance_positive = F.cosine_similarity(anchor,positive) #Each is batch X 512 
-        distance_negative = F.cosine_similarity(anchor,negative)  # .pow(.5)
-        losses = (1- distance_positive)**2 + (0 - distance_negative)**2      #Margin not used in cosine case. 
-        return losses.mean() if size_average else losses.sum()
+    # Set embedder model. This takes in the output of the trunk and outputs 64 dimensional embeddings
+    embedder = torch.nn.DataParallel(MLP([trunk_output_size,1024,512, embedding_size]).to(device))  #pass a list of linear layer dims
+
+    # Set optimizers
+    trunk_optimizer = torch.optim.Adam(trunk.parameters(), lr=lr/10, weight_decay=0.0001)
+    embedder_optimizer = torch.optim.Adam(embedder.parameters(), lr=lr, weight_decay=0.0001)
+
+    # Set the loss function
+    loss = losses.TripletMarginLoss(margin=0.1)
+
+    # Set the mining function
+    miner = miners.MultiSimilarityMiner(epsilon=0.1)
+
+    # Set the dataloader sampler
+    sampler = samplers.MPerClassSampler(train_data.targets, m=4, length_before_new_iter=len(train_data))
+    
+    save_dir = os.path.join(save_model,
+                            ''.join(str(lr).split('.')) + '_' + str(batch_size) + '_' + str(embedding_size))
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Package the above stuff into dictionaries.
+    models = {"trunk": trunk, "embedder": embedder}
+    optimizers = {"trunk_optimizer": trunk_optimizer, "embedder_optimizer": embedder_optimizer}
+    loss_funcs = {"metric_loss": loss}
+    mining_funcs = {"tuple_miner": miner}
+
+    record_keeper, _, _ = logging_presets.get_record_keeper(os.path.join(save_dir, "example_logs"),
+                                                            os.path.join(save_dir, "example_tensorboard"))
+    hooks = logging_presets.get_hook_container(record_keeper)
+
+    dataset_dict = {"val": test_data, "train": train_data}
+    model_folder = "example_saved_models"
+
+    def visualizer_hook(umapper, umap_embeddings, labels, split_name, keyname, *args):
+        logging.info("UMAP plot for the {} split and label set {}".format(split_name, keyname))
+        label_set = np.unique(labels)
+        num_classes = len(label_set)
+        fig = plt.figure(figsize=(20, 15))
+        plt.title(str(split_name) + '_' + str(embedding_size))
+        plt.gca().set_prop_cycle(cycler("color", [plt.cm.nipy_spectral(i) for i in np.linspace(0, 0.9, num_classes)]))
+        for i in range(num_classes):
+            idx = labels == label_set[i]
+            plt.plot(umap_embeddings[idx, 0], umap_embeddings[idx, 1], ".", markersize=1)
+        #plt.show()
+        plt.savefig(os.path.join(save_dir, 'level_{}.png'.format(np.random.randint(0,1000))))
+
+    # Create the tester
+    tester = testers.GlobalEmbeddingSpaceTester(end_of_testing_hook=hooks.end_of_testing_hook,
+                                                visualizer=umap.UMAP(),
+                                                visualizer_hook=visualizer_hook,
+                                                dataloader_num_workers=32,
+                                                accuracy_calculator=AccuracyCalculator(k="max_bin_count"))
+
+    end_of_epoch_hook = hooks.end_of_epoch_hook(tester,
+                                                dataset_dict,
+                                                model_folder,
+                                                test_interval=1,
+                                                patience=1)
+
+    trainer = trainers.MetricLossOnly(models,
+                                      optimizers,
+                                      batch_size,
+                                      loss_funcs,
+                                      mining_funcs,
+                                      train_data,
+                                      sampler=sampler,
+                                      dataloader_num_workers=32,
+                                      end_of_iteration_hook=hooks.end_of_iteration_hook,
+                                      end_of_epoch_hook=end_of_epoch_hook)
+
+    trainer.train(num_epochs=num_epochs)
+
+    if save_model is not None:
+
+        torch.save(models["trunk"].state_dict(), os.path.join(save_dir, 'trunk.pth'))
+        torch.save(models["embedder"].state_dict(), os.path.join(save_dir, 'embedder.pth'))
+
+        print('Model saved in ', save_dir)
