@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-
+import torchvision
 from torchvision import  transforms
 
 import umap
@@ -31,8 +31,8 @@ trans_train = transforms.Compose([
                             transforms.ToPILImage(),
                             transforms.Resize((128,128)),
                             transforms.ToTensor(),
-                            transforms.RandomVerticalFlip(),
-                            transforms.RandomRotation((-10,10)),
+                            transforms.RandomHorizontalFlip(),
+                            #transforms.RandomRotation((-1,1)),
                         ])
 
 trans_test = transforms.Compose([
@@ -92,12 +92,12 @@ def get_data_loader(split, labels, patches_path):
         df = labels[labels['FILENAME'].str.contains('S01|S04')].sample(frac=1)
         data = CarsDataset(df, patches_path, trans_train)
         loader = DataLoader(dataset=data, batch_size=128, shuffle=True)
-    if split == 'test':
+    elif split == 'test':
         df = labels[labels['FILENAME'].str.contains('S03')].sample(frac=1)
         data = CarsDataset(df, patches_path, trans_test)
         loader = DataLoader(dataset=data, batch_size=128)
     else:
-        print('need to be test or train. no other mode supported')
+        print('need to be test or train mode {} not supported'.format(split))
         sys.exit(0)
     return data, loader
 
@@ -112,7 +112,7 @@ def train(train_data, test_data, save_model, num_epochs, lr, embedding_size, bat
     trunk = torch.nn.DataParallel(trunk.to(device))
 
     # Set embedder model. This takes in the output of the trunk and outputs 64 dimensional embeddings
-    embedder = torch.nn.DataParallel(MLP([trunk_output_size,1024,512, embedding_size]).to(device))  #pass a list of linear layer dims
+    embedder = torch.nn.DataParallel(MLP([trunk_output_size,1024, embedding_size]).to(device))  #pass a list of linear layer dims
 
     # Set optimizers
     trunk_optimizer = torch.optim.Adam(trunk.parameters(), lr=lr/10, weight_decay=0.0001)
