@@ -26,5 +26,8 @@ The focus of this module is to solve the problem of City-Scale Multi-Camera Vehi
 - [Sergi Vidal Bazan](https://github.com/servidal) - [Email](servidal95@gmail.com)
 - [Eudald Ballescà Casas](https://github.com/eudaldbc) - [Email](eudald.ballesca@gmail.com)
 
+## Slides
+[Slides](https://docs.google.com/presentation/d/1Yjcwqfo7I0FBdJxlhkjBUOnm0-CTNvcH51Ts4Bv3ouk/edit?usp=sharing)
+
 ## Report
 Soon 

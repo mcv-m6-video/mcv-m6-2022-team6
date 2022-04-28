@@ -1,15 +1,13 @@
-import os, sys, cv2, torch, torchvision, random, argparse
+import os, sys, argparse
 import pandas as pd
 from copy import deepcopy
 from tqdm import tqdm
-
-import matplotlib as plt
 
 from pytorch_metric_learning.utils import common_functions as c_f
 from pytorch_metric_learning.utils.inference import MatchFinder, InferenceModel
 from pytorch_metric_learning.distances import CosineSimilarity
 
-from re_id_utils import get_id_frames_cam, get_data_loader, compare_cams, merge_dicts, invert_dict, load_trunk_embedder
+from re_id_utils import get_id_cam, get_data, comp_cams, merge, invert_dict, load_siamese
 from eval_tracking_mtmc import evaluate_mtmc
 
 def parse_args(args=sys.argv[1:]):
@@ -22,54 +20,56 @@ def parse_args(args=sys.argv[1:]):
                         help='path to trunk model')
     parser.add_argument('--embedder_model', type=str, default='Week5/model/0001_32_256/embedder.pth',
                         help='path to embedder model')
-    parser.add_argument('--save_reid', type=str, default=None,#'Week5/det/reid/',
-                        help='path to save reid detections')
+    parser.add_argument('--thr', type=float, default=0.5,
+                        help='threshold to consider a match')
+    parser.add_argument('--patches_comp_c1', type=int, default=4,
+                        help='number of patches to compare with cam1')
+    parser.add_argument('--patches_comp_c2', type=int, default=6,
+                        help='number of patches to compare with cam2')
     parser.add_argument('--show_reid', default=True,
                         help='show example of reid')
+    parser.add_argument('--save_reid', type=str, default=None,#'Week5/det/reid/',
+                        help='path to save reid detections')
     parser.add_argument('--eval_mtmc', default=True,
                         help='evaluate multi target multi camera tracking')
-    parser.add_argument('--thr', type=float, default=0.6,
-                        help='threshold to consider a match')
-    parser.add_argument('--patches_to_compare_c1', type=int, default=3,
-                        help='number of patches to compare with cam1')
-    parser.add_argument('--patches_to_compare_c2', type=int, default=5,
-                        help='number of patches to compare with cam2')
+    
+    
     return parser.parse_args(args)
 
 
 if __name__ == '__main__':
     args = parse_args()
 
-    trunk, embedder = load_trunk_embedder(args.trunk_model, args.embedder_model)
+    backbone, encoder = load_siamese(args.trunk_model, args.embedder_model)
 
     match_finder = MatchFinder(distance=CosineSimilarity(), threshold=args.thr)
-    inference_model = InferenceModel(trunk, embedder, match_finder=match_finder)
+    inference_model = InferenceModel(backbone, encoder, match_finder=match_finder)
 
-    labels = pd.read_csv(args.det_csv)
-    test_data, _ = get_data_loader('test', labels, args.det_patches)
-    indices_cameras = c_f.get_labels_to_indices(test_data.camera)
+    IDs = pd.read_csv(args.det_csv)
+    data, _ = get_data('test', IDs, args.det_patches)
+    idx_cameras = c_f.get_labels_to_indices(data.camera)  #a dictionary with each camera (c010,c011,...) as a key and an array with frame_idx as values
 
-    id_frames_cams = {}
+    id_frames = {}
     for cam in ['c010', 'c011', 'c012', 'c013', 'c014', 'c015']:
-        id_frames_cams[cam] = get_id_frames_cam(test_data, indices_cameras, cam)
+        id_frames[cam] = get_id_cam(data, idx_cameras, cam) #get for each camera box_ids and frame_idx
 
-    id_frames_all = deepcopy(id_frames_cams['c010'])
+    id_frames_ref = deepcopy(id_frames['c010'])
 
     for cam in tqdm(['c011', 'c012', 'c013', 'c014', 'c015']):
-        re_id_cam = compare_cams(test_data, deepcopy(id_frames_all),
-                                 deepcopy(id_frames_cams[cam]), inference_model,
-                                 args.patches_to_compare_c1,
-                                 args.patches_to_compare_c2)
+        reID_cam = comp_cams(data, deepcopy(id_frames_ref),
+                                 deepcopy(id_frames[cam]), inference_model,
+                                 args.patches_comp_c1,
+                                 args.patches_comp_c2)
 
-        id_frames_all = merge_dicts(id_frames_all, re_id_cam)
+        id_frames_ref = merge(id_frames_ref, reID_cam)
 
-    frames_id_all = invert_dict(id_frames_all)
+    frames_id_all = invert_dict(id_frames_ref)
 
     det_dir = os.path.join(args.save_reid,
-                            ''.join(str(args.thr).split('.')) + '_' + str(args.patches_to_compare_c1) + '_' + str(args.patches_to_compare_c2))
+                            ''.join(str(args.thr).split('.')) + '_' + str(args.patches_comp_c1) + '_' + str(args.patches_comp_c2))
 
     if args.save_reid is not None:
-        for cam, id_frames_cam in id_frames_cams.items():
+        for cam, id_frames_cam in id_frames.items():
             os.makedirs(os.path.join(det_dir, cam), exist_ok=True)
             det_path = os.path.join(det_dir, cam, 'overlap_reid_detections.txt')
             if os.path.isfile(det_path):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             frames_cam = sorted(frames_cam)
 
             for idx in frames_cam:
-                box = test_data[idx]
+                box = data[idx]
 
                 # Format: <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x>, <y>, <z>
                 det = str(box[4] + 1) + ',' + str(frames_id_all[idx]) + ',' + str(box[3][0]) + ',' \
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     if args.eval_mtmc:
         summary = evaluate_mtmc(det_dir,"dataset/train/S03")
-        print('thr: ', args.thr, ', patches c1: ', args.patches_to_compare_c1, ', patches c2: ', args.patches_to_compare_c2)
+        print('thr: ', args.thr, ', patches c1: ', args.patches_comp_c1, ', patches c2: ', args.patches_comp_c2)
         print(summary)
 
         summary.to_csv(os.path.join(det_dir, 'evaluation_mtmc.csv'), sep='\t')
