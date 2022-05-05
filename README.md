@@ -31,3 +31,4 @@ The focus of this module is to solve the problem of City-Scale Multi-Camera Vehi
 
 ## Report
 [Overleaf](https://www.overleaf.com/project/6263c9993a5b386bb07d812f)
+[PDF](Video_Surveillance_for_Road_Traffic_Monitoring.pdf)
